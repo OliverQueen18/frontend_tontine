@@ -16,13 +16,13 @@ pipeline {
 
         string(
             name: 'BACKEND_HOST',
-            defaultValue: 'pieml-backend',
+            defaultValue: 'backend-tontine',
             description: 'Hote du backend pour le proxy Nginx (/api)'
         )
 
         string(
             name: 'BACKEND_PORT',
-            defaultValue: '7000',
+            defaultValue: '6000',
             description: 'Port du backend pour le proxy Nginx'
         )
 
@@ -34,8 +34,8 @@ pipeline {
     }
 
     environment {
-        APP_NAME     = 'pieml-frontend'
-        DOCKER_IMAGE = 'oliverqueen18/pieml-frontend'
+        APP_NAME     = 'frontend-tontine'
+        DOCKER_IMAGE = 'oliverqueen18/frontend-tontine'
         DOCKER_TAG   = "${BUILD_NUMBER}"
     }
 
@@ -93,10 +93,10 @@ pipeline {
 
     post {
         success {
-            echo "Pipeline PIEML frontend reussi (${DOCKER_IMAGE}:${DOCKER_TAG})"
+            echo "Pipeline TONTINE frontend reussi (${DOCKER_IMAGE}:${DOCKER_TAG})"
         }
         failure {
-            echo 'Pipeline PIEML frontend echoue'
+            echo 'Pipeline TONTINE frontend echoue'
         }
         always {
             cleanWs()

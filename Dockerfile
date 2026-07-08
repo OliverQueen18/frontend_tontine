@@ -15,11 +15,11 @@ RUN npm run build:${BUILD_CONFIGURATION}
 
 FROM nginx:1.27-alpine
 
-ENV BACKEND_HOST=backend-pieml
-ENV BACKEND_PORT=7000
+ENV BACKEND_HOST=backend-tontine
+ENV BACKEND_PORT=6000
 
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
-COPY --from=build /app/dist/pieml-frontend/browser /usr/share/nginx/html
+COPY --from=build /app/dist/frontend-tontine/browser /usr/share/nginx/html
 
 RUN rm /docker-entrypoint.d/20-envsubst-on-templates.sh
 
