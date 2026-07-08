@@ -1,0 +1,219 @@
+<div class="page-header">
+  <div>
+    <h1>Demandes d'inscription</h1>
+    <p>Validation des nouvelles agences collectrices</p>
+  </div>
+  <span class="count-pill">{{ demandes().length }} demande(s)</span>
+</div>
+
+@if (message()) {
+  <div class="alert alert-info">{{ message() }}</div>
+}
+
+<div class="toolbar card">
+  <div class="filter-group">
+    <span class="filter-label">Statut</span>
+    <div class="filter-pills">
+      @for (opt of filterOptions; track opt.value) {
+        <button
+          type="button"
+          class="filter-pill"
+          [class.active]="filter === opt.value"
+          (click)="setFilter(opt.value)"
+        >
+          {{ opt.label }}
+        </button>
+      }
+    </div>
+  </div>
+</div>
+
+<div class="card table-card demandes-table-card">
+  <table class="demandes-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Agence</th>
+        <th>Administrateur</th>
+        <th>Contact</th>
+        <th>Paiement</th>
+        <th>Statut</th>
+        <th class="col-chevron" aria-hidden="true"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (d of demandes(); track d.id) {
+        <tr
+          class="row-clickable"
+          [class.row-selected]="selected?.id === d.id"
+          tabindex="0"
+          role="button"
+          (click)="openDetail(d)"
+          (keydown.enter)="openDetail(d)"
+          (keydown.space)="$event.preventDefault(); openDetail(d)"
+        >
+          <td class="cell-date">
+            <span class="date-main">{{ d.createdAt | date:'dd/MM/yyyy' }}</span>
+            <span class="date-sub">{{ d.createdAt | date:'HH:mm' }}</span>
+          </td>
+          <td>
+            <span class="agence-name">{{ d.agenceNom }}</span>
+            @if (d.ville) {
+              <span class="cell-sub"><i class="pi pi-map-marker"></i> {{ d.ville }}</span>
+            }
+          </td>
+          <td>
+            <span class="admin-name">{{ d.nomComplet }}</span>
+            <span class="cell-sub mono">{{ d.username }}</span>
+          </td>
+          <td>
+            <span class="cell-sub">{{ d.email }}</span>
+            @if (d.telephone || d.agenceTelephone) {
+              <span class="cell-sub">{{ d.telephone || d.agenceTelephone }}</span>
+            }
+          </td>
+          <td>
+            <span class="pay-badge" [class]="paymentClass(d.moyenPaiement)">
+              {{ paymentLabel(d.moyenPaiement) }}
+            </span>
+            <span class="cell-sub mono">{{ d.referencePaiement }}</span>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="statutClass(d.statut)">{{ statutLabel(d.statut) }}</span>
+          </td>
+          <td class="col-chevron">
+            <i class="pi pi-chevron-right"></i>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="7" class="empty-cell">
+            <i class="pi pi-inbox"></i>
+            <p>Aucune demande pour ce filtre.</p>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (selected) {
+  <div class="modal-backdrop detail-backdrop" (click)="closeDetail()">
+    <div class="detail-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="detail-modal-header">
+        <div class="detail-modal-title">
+          <span class="detail-modal-icon"><i class="pi pi-building"></i></span>
+          <div>
+            <h3>{{ selected.agenceNom }}</h3>
+            <p class="detail-modal-meta">
+              Demande du {{ selected.createdAt | date:'dd MMMM yyyy à HH:mm' }}
+            </p>
+          </div>
+        </div>
+        <div class="detail-modal-header-actions">
+          <span class="badge badge-lg" [ngClass]="statutClass(selected.statut)">
+            {{ statutLabel(selected.statut) }}
+          </span>
+          <button type="button" class="btn-close" (click)="closeDetail()" aria-label="Fermer">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="detail-modal-body">
+        <section class="detail-section">
+          <h4><i class="pi pi-building"></i> Agence</h4>
+          <dl class="detail-grid">
+            <div><dt>Responsable</dt><dd>{{ selected.responsable || '—' }}</dd></div>
+            <div><dt>Ville</dt><dd>{{ selected.ville || '—' }}</dd></div>
+            <div class="span-2"><dt>Adresse</dt><dd>{{ selected.adresse || '—' }}</dd></div>
+            <div><dt>Tél. agence</dt><dd>{{ selected.agenceTelephone || '—' }}</dd></div>
+            <div><dt>E-mail agence</dt><dd>{{ selected.agenceEmail || '—' }}</dd></div>
+          </dl>
+          @if (selected.logoUrl) {
+            <div class="logo-preview">
+              <span class="preview-label">Logo</span>
+              <img [src]="docUrl(selected.logoUrl)" alt="Logo agence" />
+            </div>
+          }
+        </section>
+
+        <section class="detail-section">
+          <h4><i class="pi pi-user"></i> Administrateur</h4>
+          <dl class="detail-grid">
+            <div><dt>Nom complet</dt><dd>{{ selected.nomComplet }}</dd></div>
+            <div><dt>Identifiant</dt><dd class="mono">{{ selected.username }}</dd></div>
+            <div><dt>E-mail</dt><dd>{{ selected.email }}</dd></div>
+            <div><dt>Téléphone</dt><dd>{{ selected.telephone || '—' }}</dd></div>
+          </dl>
+        </section>
+
+        <section class="detail-section">
+          <h4><i class="pi pi-wallet"></i> Paiement</h4>
+          <div class="payment-card">
+            <span class="pay-badge pay-badge-lg" [class]="paymentClass(selected.moyenPaiement)">
+              {{ paymentLabel(selected.moyenPaiement) }}
+            </span>
+            <div>
+              <span class="preview-label">Référence transaction</span>
+              <p class="ref-value mono">{{ selected.referencePaiement }}</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="detail-section">
+          <h4><i class="pi pi-id-card"></i> Documents</h4>
+          @if (selected.pieceIdentiteUrl) {
+            <a class="doc-link" [href]="docUrl(selected.pieceIdentiteUrl)" target="_blank" rel="noopener">
+              <i class="pi pi-file-pdf"></i>
+              Voir la pièce d'identité
+              <i class="pi pi-external-link"></i>
+            </a>
+          } @else {
+            <p class="muted">Aucun document joint</p>
+          }
+        </section>
+
+        @if (selected.statut !== 'EN_ATTENTE' && selected.motifRejet) {
+          <section class="detail-section detail-section--reject">
+            <h4><i class="pi pi-info-circle"></i> Motif de rejet</h4>
+            <p>{{ selected.motifRejet }}</p>
+            @if (selected.dateTraitement) {
+              <small>Traité le {{ selected.dateTraitement | date:'dd/MM/yyyy HH:mm' }}</small>
+            }
+          </section>
+        }
+
+        @if (selected.statut === 'APPROUVEE' && selected.agenceCreeeId) {
+          <section class="detail-section detail-section--success">
+            <h4><i class="pi pi-check-circle"></i> Agence créée</h4>
+            <p>Identifiant agence : <strong>#{{ selected.agenceCreeeId }}</strong></p>
+          </section>
+        }
+      </div>
+
+      @if (selected.statut === 'EN_ATTENTE') {
+        <footer class="detail-modal-footer">
+          <div class="reject-block">
+            <label>Motif de rejet (obligatoire pour refuser)
+              <textarea [(ngModel)]="motifRejet" rows="2" placeholder="Expliquez la raison du refus…"></textarea>
+            </label>
+          </div>
+          <div class="footer-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeDetail()">Fermer</button>
+            <button type="button" class="btn btn-danger" (click)="rejeter()">
+              <i class="pi pi-times"></i> Rejeter
+            </button>
+            <button type="button" class="btn btn-primary" (click)="approuver(selected)">
+              <i class="pi pi-check"></i> Approuver
+            </button>
+          </div>
+        </footer>
+      } @else {
+        <footer class="detail-modal-footer detail-modal-footer--simple">
+          <button type="button" class="btn btn-secondary" (click)="closeDetail()">Fermer</button>
+        </footer>
+      }
+    </div>
+  </div>
+}

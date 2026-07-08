@@ -1,0 +1,265 @@
+<div class="page-header">
+  <div>
+    <h1>Agences</h1>
+    <p>Gestion multi-agences de la plateforme</p>
+  </div>
+  <div class="header-actions">
+    <span class="count-pill">{{ filteredAgences().length }} / {{ agences().length }}</span>
+    <button class="btn btn-primary" (click)="openCreate()">
+      <i class="pi pi-plus"></i> Ajouter
+    </button>
+  </div>
+</div>
+
+@if (message()) {
+  <div class="alert alert-info">{{ message() }}</div>
+}
+
+<div class="toolbar card filters-bar">
+  <label class="filter-field filter-field--grow">
+    <span class="filter-label">Rechercher</span>
+    <input
+      type="search"
+      [ngModel]="filterQ()"
+      (ngModelChange)="filterQ.set($event)"
+      name="filterQ"
+      placeholder="Code, nom, ville, responsable…"
+    />
+  </label>
+  <div class="filter-field">
+    <span class="filter-label">Statut</span>
+    <div class="filter-pills">
+      @for (opt of statutOptions; track opt.value) {
+        <button
+          type="button"
+          class="filter-pill"
+          [class.active]="filterStatut() === opt.value"
+          (click)="setStatutFilter(opt.value)"
+        >
+          {{ opt.label }}
+        </button>
+      }
+    </div>
+  </div>
+  <div class="filter-actions">
+    <button type="button" class="btn btn-secondary btn-sm" (click)="clearFilters()">Réinitialiser</button>
+  </div>
+</div>
+
+<div class="card table-card list-card">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Agence</th>
+        <th>Responsable</th>
+        <th>Contact</th>
+        <th>Localisation</th>
+        <th>Comm. admin</th>
+        <th>Statut</th>
+        <th class="col-chevron" aria-hidden="true"></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (a of filteredAgences(); track a.id) {
+        <tr
+          class="row-clickable"
+          [class.row-selected]="selected?.id === a.id"
+          [class.row-inactive]="a.statut === 'INACTIF'"
+          tabindex="0"
+          role="button"
+          (click)="openDetail(a)"
+          (keydown.enter)="openDetail(a)"
+          (keydown.space)="$event.preventDefault(); openDetail(a)"
+        >
+          <td><span class="code-badge">{{ a.code }}</span></td>
+          <td>
+            <span class="primary-text">{{ a.nom }}</span>
+            @if (a.email) {
+              <span class="cell-sub">{{ a.email }}</span>
+            }
+          </td>
+          <td>{{ a.responsable || '—' }}</td>
+          <td>{{ a.telephone || '—' }}</td>
+          <td>
+            @if (a.ville) {
+              <span class="primary-text"><i class="pi pi-map-marker"></i> {{ a.ville }}</span>
+            }
+            <span class="cell-sub mono">{{ formatCoords(a) }}</span>
+          </td>
+          <td>{{ formatCommissionAdmin(a) }}</td>
+          <td>
+            <span class="badge" [ngClass]="statutClass(a.statut)">{{ statutLabel(a.statut) }}</span>
+          </td>
+          <td class="col-chevron"><i class="pi pi-chevron-right"></i></td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="8" class="empty-cell">
+            <i class="pi pi-building"></i>
+            <p>Aucune agence ne correspond aux filtres.</p>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (selected) {
+  <div class="modal-backdrop detail-backdrop" (click)="closeDetail()">
+    <div class="detail-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="detail-modal-header">
+        <div class="detail-modal-title">
+          @if (selected.logoUrl) {
+            <img [src]="logoUrl(selected)" alt="" class="detail-logo" />
+          } @else {
+            <span class="detail-modal-icon"><i class="pi pi-building"></i></span>
+          }
+          <div>
+            <h3>{{ selected.nom }}</h3>
+            <p class="detail-modal-meta">
+              <span class="code-badge">{{ selected.code }}</span>
+            </p>
+          </div>
+        </div>
+        <div class="detail-modal-header-actions">
+          <span class="badge badge-lg" [ngClass]="statutClass(selected.statut)">
+            {{ statutLabel(selected.statut) }}
+          </span>
+          <button type="button" class="btn-close" (click)="closeDetail()" aria-label="Fermer">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="detail-modal-body">
+        <section class="detail-section">
+          <h4><i class="pi pi-id-card"></i> Informations</h4>
+          <dl class="detail-grid">
+            <div><dt>Responsable</dt><dd>{{ selected.responsable || '—' }}</dd></div>
+            <div><dt>Téléphone</dt><dd>{{ selected.telephone || '—' }}</dd></div>
+            <div><dt>E-mail</dt><dd>{{ selected.email || '—' }}</dd></div>
+            <div><dt>Ville</dt><dd>{{ selected.ville || '—' }}</dd></div>
+            <div class="span-2"><dt>Adresse</dt><dd>{{ selected.adresse || '—' }}</dd></div>
+            <div class="span-2"><dt>Coordonnées GPS</dt><dd class="mono">{{ formatCoords(selected) }}</dd></div>
+            <div><dt>Commission admin</dt><dd>{{ formatCommissionAdmin(selected) }}</dd></div>
+          </dl>
+        </section>
+
+        @if (selected.latitude != null && selected.longitude != null) {
+          <section class="detail-section">
+            <h4><i class="pi pi-map"></i> Carte</h4>
+            <app-osm-map-picker
+              [mapVisible]="true"
+              [readonly]="true"
+              [latitude]="selected.latitude"
+              [longitude]="selected.longitude"
+              hint=""
+            />
+          </section>
+        }
+      </div>
+
+      <footer class="detail-modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDetail()">Fermer</button>
+        <button type="button" class="btn btn-secondary" (click)="openGrille(selected)">
+          <i class="pi pi-percentage"></i> Commission
+        </button>
+        <button type="button" class="btn btn-primary" (click)="openEdit(selected)">
+          <i class="pi pi-pencil"></i> Modifier
+        </button>
+        @if (selected.statut === 'ACTIF') {
+          <button type="button" class="btn btn-danger" (click)="desactiver(selected)">
+            <i class="pi pi-ban"></i> Désactiver
+          </button>
+        }
+      </footer>
+    </div>
+  </div>
+}
+
+@if (showForm) {
+  <div class="modal-backdrop detail-backdrop" (click)="closeForm()">
+    <div class="detail-modal detail-modal--form" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="detail-modal-header">
+        <div class="detail-modal-title">
+          <span class="detail-modal-icon"><i class="pi pi-pencil"></i></span>
+          <div>
+            <h3>{{ editing ? 'Modifier' : 'Nouvelle' }} agence</h3>
+            <p class="detail-modal-meta">Renseignez les informations et la localisation</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" (click)="closeForm()" aria-label="Fermer">
+          <i class="pi pi-times"></i>
+        </button>
+      </header>
+
+      <form (ngSubmit)="save()" class="detail-modal-body form-body">
+        <div class="form-grid">
+          <label>Nom *<input [(ngModel)]="form.nom" name="nom" required /></label>
+          <label>Code<input [(ngModel)]="form.code" name="code" placeholder="Auto si vide" /></label>
+          <label>Responsable<input [(ngModel)]="form.responsable" name="responsable" /></label>
+          <label>Téléphone<input [(ngModel)]="form.telephone" name="telephone" /></label>
+          <label>E-mail<input [(ngModel)]="form.email" name="email" type="email" /></label>
+          <label>Ville<input [(ngModel)]="form.ville" name="ville" /></label>
+          <label>Taux commission admin (%)
+            <div class="percent-input">
+              <input type="number" [(ngModel)]="commissionAdminPercent" name="tauxCommissionAdmin" required min="0" max="100" step="0.01" />
+              <span class="suffix">%</span>
+            </div>
+            <small class="hint">Prélevé sur le montant des opérations d'entrée de l'agence. Défaut plateforme : {{ defaultCommissionAdminPercent }} %</small>
+          </label>
+          <label class="full-width">Adresse
+            <input [(ngModel)]="form.adresse" name="adresse" placeholder="Rue, quartier…" />
+          </label>
+          <div class="full-width map-section">
+            <span class="field-label">Localisation de l'agence *</span>
+            <app-osm-map-picker
+              [mapVisible]="showForm"
+              [address]="mapAddress"
+              hint="Saisissez l'adresse ou cliquez sur la carte"
+              [(latitude)]="form.latitude"
+              [(longitude)]="form.longitude"
+              (locationPicked)="onLocationPicked($event)"
+            />
+          </div>
+          <label class="full-width">Logo
+            <div class="logo-row">
+              @if (logoPreview) { <img [src]="logoPreview" alt="" class="logo-thumb" /> }
+              <input type="file" accept="image/*" (change)="onLogoSelected($event)" />
+            </div>
+          </label>
+        </div>
+        <footer class="form-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeForm()">Annuler</button>
+          <button class="btn btn-primary" type="submit">Enregistrer</button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}
+
+@if (showGrille && grilleAgence?.id) {
+  <div class="modal-backdrop detail-backdrop" (click)="closeGrille()">
+    <div class="detail-modal detail-modal--wide" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="detail-modal-header">
+        <div class="detail-modal-title">
+          <span class="detail-modal-icon"><i class="pi pi-percentage"></i></span>
+          <div>
+            <h3>Grille de commission</h3>
+            <p class="detail-modal-meta">{{ grilleAgence!.nom }}</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" (click)="closeGrille()" aria-label="Fermer">
+          <i class="pi pi-times"></i>
+        </button>
+      </header>
+      <div class="detail-modal-body">
+        <app-grille-commission-editor
+          [agenceId]="grilleAgence!.id!"
+          [agenceNom]="grilleAgence!.nom"
+          (saved)="message.set('Grille de commission enregistrée')" />
+      </div>
+    </div>
+  </div>
+}

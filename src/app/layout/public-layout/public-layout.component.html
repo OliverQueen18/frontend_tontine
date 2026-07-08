@@ -1,0 +1,87 @@
+<div class="public-shell">
+  <div class="top-bar">
+    <div class="container top-bar-inner">
+      <div class="top-bar-contacts">
+        <a [href]="phoneHref()"><i class="pi pi-phone"></i> {{ layout().phone }}</a>
+        <a [href]="'mailto:' + layout().email"><i class="pi pi-envelope"></i> {{ layout().email }}</a>
+      </div>
+      <div class="top-bar-social">
+        <span>{{ layout().socialLabel }}</span>
+        <a [href]="layout().facebook" aria-label="Facebook"><i class="pi pi-facebook"></i></a>
+        <a [href]="layout().instagram" aria-label="Instagram"><i class="pi pi-instagram"></i></a>
+        <a [href]="layout().whatsapp" aria-label="WhatsApp"><i class="pi pi-whatsapp"></i></a>
+        <a [href]="layout().youtube" aria-label="YouTube"><i class="pi pi-youtube"></i></a>
+      </div>
+    </div>
+  </div>
+
+  <header class="main-navbar">
+    <div class="container navbar-inner">
+      <a routerLink="/" class="brand" (click)="menuOpen=false">
+        <img [src]="iconUrl()" alt="" class="brand-icon" />
+        <div class="brand-text">
+          <strong>{{ layout().brandName }}</strong>
+          <small>{{ layout().brandTagline }}</small>
+        </div>
+      </a>
+
+      <button type="button" class="nav-toggle" (click)="menuOpen = !menuOpen" aria-label="Menu">
+        <i class="pi" [class.pi-bars]="!menuOpen" [class.pi-times]="menuOpen"></i>
+      </button>
+
+      @if (menuOpen) {
+        <div class="nav-backdrop" (click)="menuOpen=false"></div>
+      }
+
+      <div class="mobile-menu" [class.open]="menuOpen">
+        <nav class="main-nav">
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" (click)="menuOpen=false">Accueil</a>
+          <a routerLink="/" fragment="a-propos" (click)="menuOpen=false">À propos</a>
+          <a routerLink="/fonctionnalites" routerLinkActive="active" (click)="menuOpen=false">Fonctionnalités</a>
+          <a routerLink="/" fragment="avantages" (click)="menuOpen=false">Avantages</a>
+          <a routerLink="/" fragment="comment-ca-marche" (click)="menuOpen=false">Comment ça marche</a>
+          <a routerLink="/contact" routerLinkActive="active" (click)="menuOpen=false">Contact</a>
+        </nav>
+        <div class="navbar-actions">
+          <a routerLink="/connexion" class="btn btn-outline" (click)="menuOpen=false">
+            <i class="pi pi-user"></i> {{ layout().loginButtonLabel }}
+          </a>
+          <a [routerLink]="collecteurRoute()" class="btn btn-green" (click)="menuOpen=false">
+            <i class="pi pi-user-plus"></i> {{ layout().contactButtonLabel }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <router-outlet />
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <img [src]="logoUrl()" [alt]="layout().brandName" class="footer-logo" />
+        <p>{{ layout().footerDescription }}</p>
+      </div>
+      <div>
+        <h4>Navigation</h4>
+        <a routerLink="/">Accueil</a>
+        <a routerLink="/" fragment="a-propos">À propos</a>
+        <a routerLink="/fonctionnalites">Fonctionnalités</a>
+        <a routerLink="/contact">Contact</a>
+      </div>
+      <div>
+        <h4>Contact</h4>
+        <p>{{ layout().phone }}</p>
+        <p>{{ layout().email }}</p>
+        <p>{{ layout().footerAddress }}</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container">{{ layout().footerCopyright }}</div>
+    </div>
+  </footer>
+
+  <app-chat-assistant context="public" />
+</div>

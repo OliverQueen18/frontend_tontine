@@ -1,0 +1,185 @@
+@if (data(); as d) {
+  <div class="page-header">
+    <div>
+      <h1>Tableau de bord</h1>
+      <p>{{ d.scopeLabel || "Vue d'ensemble des opérations" }}</p>
+    </div>
+  </div>
+
+  @if (!isAgentView) {
+    <div class="toolbar card dashboard-filters">
+      <label>
+        Période
+        <select [(ngModel)]="periode" name="periode" (ngModelChange)="onPeriodeChange()">
+          <option value="jour">Aujourd'hui</option>
+          <option value="semaine">7 derniers jours</option>
+          <option value="mois">Mois en cours</option>
+          <option value="custom">Personnalisée</option>
+        </select>
+      </label>
+      @if (periode === 'custom') {
+        <label>Du <input type="date" [(ngModel)]="filterDebut" name="debut" (change)="load()" /></label>
+        <label>Au <input type="date" [(ngModel)]="filterFin" name="fin" (change)="load()" /></label>
+      }
+      @if (canFilterAgence) {
+        <label>
+          Agence
+          <select [(ngModel)]="filterAgenceId" name="agence" (ngModelChange)="onAgenceFilterChange()">
+            <option [ngValue]="null">Toutes</option>
+            @for (a of agences(); track a.id) {
+              <option [ngValue]="a.id">{{ a.nom }}</option>
+            }
+          </select>
+        </label>
+      }
+      @if (canFilterAgent) {
+        <label>
+          Agent
+          <select [(ngModel)]="filterAgentId" name="agent" (ngModelChange)="load()">
+            <option [ngValue]="null">Tous</option>
+            @for (a of agents(); track a.id) {
+              <option [ngValue]="a.id">{{ a.nomComplet }}</option>
+            }
+          </select>
+        </label>
+      }
+      <button type="button" class="btn btn-secondary" (click)="resetFilters()">Réinitialiser</button>
+      @if (periode !== 'custom') {
+        <button type="button" class="btn btn-primary" (click)="load()">Actualiser</button>
+      }
+    </div>
+  }
+
+  <div class="kpi-grid">
+    @if (isSuperAdmin && !d.vueAgent && !filterAgenceId) {
+      <div class="kpi"><span>Agences</span><strong>{{ d.nombreAgences }}</strong></div>
+    }
+    @if (!d.vueAgent) {
+      <div class="kpi"><span>Agents</span><strong>{{ d.nombreAgents }}</strong></div>
+    }
+    <div class="kpi"><span>{{ d.vueAgent ? 'Mes clients' : 'Clients' }}</span><strong>{{ d.nombreClients }}</strong></div>
+    <div class="kpi success"><span>Collectes du jour</span><strong>{{ d.collectesJour | fcfa }}</strong></div>
+    <div class="kpi"><span>Collectes période</span><strong>{{ (d.collectesPeriode ?? d.collectesMois) | fcfa }}</strong></div>
+    @if (!d.vueAgent) {
+      <div class="kpi success"><span>Bénéfice</span><strong>{{ d.beneficeGlobal | fcfa }}</strong></div>
+      <div class="kpi warn"><span>Commission admin (entrées)</span><strong>{{ d.commissionAdmin | fcfa }}</strong></div>
+    }
+    <div class="kpi"><span>Signatures</span><strong>{{ d.nombreSignatures }}</strong></div>
+    @if (!d.vueAgent && !isSuperAdmin) {
+      <div class="kpi"><span>Solde caisse</span><strong>{{ d.soldeCaisse | fcfa }}</strong></div>
+    }
+    @if (!d.vueAgent && isSuperAdmin && filterAgenceId) {
+      <div class="kpi"><span>Solde caisse</span><strong>{{ d.soldeCaisse | fcfa }}</strong></div>
+    }
+  </div>
+
+  <section class="charts-section">
+    <h2 class="charts-title">Statistiques graphiques</h2>
+    <div class="charts-grid">
+      <section class="card chart-card chart-card-wide">
+        <div class="chart-header">
+          <h3>{{ evolutionTitle() }}</h3>
+          <span class="chart-sub">Courbe des montants collectés</span>
+        </div>
+        @if (evolutionChart(); as cfg) {
+          <app-dashboard-chart [config]="cfg" [height]="280" />
+        } @else {
+          <p class="chart-empty">Aucune donnée sur la période.</p>
+        }
+      </section>
+
+      @if (!d.vueAgent && topAgentsChart(); as cfg) {
+        <section class="card chart-card">
+          <div class="chart-header">
+            <h3>Top agents du jour</h3>
+            <span class="chart-sub">Classement par collectes</span>
+          </div>
+          <app-dashboard-chart [config]="cfg" [height]="280" />
+        </section>
+      }
+
+      @if (!d.vueAgent && financeChart(); as cfg) {
+        <section class="card chart-card">
+          <div class="chart-header">
+            <h3>Répartition financière</h3>
+            <span class="chart-sub">Commissions, dépenses et bénéfice</span>
+          </div>
+          <app-dashboard-chart [config]="cfg" [height]="280" />
+        </section>
+      }
+
+      @if (!d.vueAgent && operationsChart(); as cfg) {
+        <section class="card chart-card">
+          <div class="chart-header">
+            <h3>Opérations de caisse</h3>
+            <span class="chart-sub">Entrées vs sorties (période)</span>
+          </div>
+          <app-dashboard-chart [config]="cfg" [height]="280" />
+        </section>
+      }
+    </div>
+  </section>
+
+  <div class="split-grid">
+    <section class="card">
+      <h3>{{ d.vueAgent ? 'Mes dernières collectes' : 'Dernières collectes' }}</h3>
+      <table>
+        <thead><tr><th>Reçu</th><th>Client</th><th>Montant</th></tr></thead>
+        <tbody>
+          @for (c of d.dernieresCollectes; track c.id) {
+            <tr>
+              <td>{{ c.numeroRecu }}</td>
+              <td>{{ c.clientNom }}</td>
+              <td>{{ c.montantRecu | fcfa }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3">Aucune collecte récente</td></tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    @if (!d.vueAgent || d.dernieresRestitutions.length) {
+      <section class="card">
+        <h3>{{ d.vueAgent ? 'Restitutions de mes clients' : 'Dernières restitutions' }}</h3>
+        <table>
+          <thead><tr><th>Reçu</th><th>Client</th><th>Net</th></tr></thead>
+          <tbody>
+            @for (r of d.dernieresRestitutions; track r.id) {
+              <tr>
+                <td>{{ r.numeroRecu }}</td>
+                <td>{{ r.clientNom }}</td>
+                <td>{{ r.montantNet | fcfa }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="3">Aucune restitution récente</td></tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+  </div>
+
+  @if (!d.vueAgent && d.dernieresDepenses.length) {
+    <section class="card" style="margin-top:1rem">
+      <h3>Dernières opérations</h3>
+      <table>
+        <thead><tr><th>Date</th><th>Catégorie</th><th>Observation</th><th>Montant</th></tr></thead>
+        <tbody>
+          @for (dep of d.dernieresDepenses; track dep.id) {
+            <tr>
+              <td>{{ dep.dateDepense }}</td>
+              <td>{{ dep.categorie }}</td>
+              <td>{{ dep.observation || '—' }}</td>
+              <td>{{ dep.montant | fcfa }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+}
+
+@if (loading() && !data()) {
+  <div class="card">Chargement du tableau de bord...</div>
+}

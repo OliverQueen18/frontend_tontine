@@ -1,0 +1,125 @@
+<div class="page-header">
+  <div>
+    <h1>Paramètres</h1>
+    <p>Configuration de votre agence et de la plateforme</p>
+  </div>
+</div>
+
+<div class="split-grid">
+  <section class="card">
+    <h3>Entreprise</h3>
+    <dl class="info-list">
+      <div><dt>Nom</dt><dd>Tontine Marché</dd></div>
+      <div><dt>Version</dt><dd>{{ version }}</dd></div>
+      <div><dt>Utilisateur connecté</dt><dd>{{ auth.user()?.nomComplet }}</dd></div>
+      <div><dt>Rôle</dt><dd>{{ auth.user()?.role }}</dd></div>
+      @if (agenceNom) {
+        <div><dt>Agence</dt><dd>{{ agenceNom }}</dd></div>
+      }
+    </dl>
+  </section>
+
+  <section class="card">
+    <h3>Commission sur restitution</h3>
+    <p class="hint">
+      La commission est calculée selon la grille de montants définie ci-dessous,
+      en fonction du total épargné par le client au moment de la restitution.
+    </p>
+    @if (canManageAgence) {
+      <p class="hint">
+        Gérez aussi les membres de votre équipe depuis le menu <strong>Équipe</strong>.
+      </p>
+    }
+  </section>
+</div>
+
+@if (canManageAgence && agenceForm) {
+  <section class="card" style="margin-top: 1rem">
+    <h3>Mon agence</h3>
+    @if (agenceMessage()) {
+      <div class="alert alert-info">{{ agenceMessage() }}</div>
+    }
+    <form class="form-grid agence-form" (ngSubmit)="saveAgence()">
+      <label>Code<input [ngModel]="agenceForm.code" name="code" readonly /></label>
+      <label>Nom *<input [(ngModel)]="agenceForm.nom" name="nom" required /></label>
+      <label>Responsable<input [(ngModel)]="agenceForm.responsable" name="responsable" /></label>
+      <label>Téléphone<input [(ngModel)]="agenceForm.telephone" name="telephone" /></label>
+      <label>E-mail<input [(ngModel)]="agenceForm.email" name="email" type="email" /></label>
+      <label>Ville<input [(ngModel)]="agenceForm.ville" name="ville" /></label>
+      <label class="full-width">Adresse
+        <input [(ngModel)]="agenceForm.adresse" name="adresse" placeholder="Rue, quartier…" />
+      </label>
+      <div class="full-width map-section">
+        <span class="field-label">Localisation de l'agence *</span>
+        <app-osm-map-picker
+          [mapVisible]="!!agenceForm"
+          [address]="mapAddress"
+          hint="Saisissez l'adresse de l'agence ou cliquez sur la carte — la carte se met à jour quand vous modifiez l'adresse"
+          [(latitude)]="agenceForm.latitude"
+          [(longitude)]="agenceForm.longitude"
+          (locationPicked)="onLocationPicked($event)"
+        />
+      </div>
+      <label class="full-width">Logo de l'agence
+        <div class="logo-row">
+          @if (logoPreview) {
+            <img [src]="logoPreview" alt="Logo" class="logo-thumb" />
+          }
+          <input type="file" accept="image/*" (change)="onLogoSelected($event)" />
+        </div>
+        <small class="hint">Affiché sur les reçus envoyés à vos clients.</small>
+      </label>
+      <div class="full-width">
+        <button type="submit" class="btn btn-primary" [disabled]="savingAgence()">
+          {{ savingAgence() ? 'Enregistrement...' : 'Enregistrer l\'agence' }}
+        </button>
+      </div>
+    </form>
+  </section>
+}
+
+@if (canEditGrille && agenceId) {
+  <section class="card" style="margin-top: 1rem">
+    <app-grille-commission-editor [agenceId]="agenceId" [agenceNom]="agenceNom" />
+  </section>
+}
+
+@if (isSuperAdmin && platformSettings) {
+  <section class="card" style="margin-top: 1rem">
+    <h3>Paramètres plateforme</h3>
+    <p class="hint">Inscription collecteur, frais et taux de commission par défaut</p>
+    @if (platformMessage()) {
+      <div class="alert alert-info">{{ platformMessage() }}</div>
+    }
+    <form class="form-grid agence-form" (ngSubmit)="savePlatformSettings()">
+      <label>Frais de création d'agence (FCFA)
+        <input type="number" [(ngModel)]="platformSettings.fraisCreationAgence" name="frais" required min="0" />
+      </label>
+      <label>Numéro Orange Money / WAVE
+        <input [(ngModel)]="platformSettings.telephonePaiementMobile" name="telPaiement" required />
+      </label>
+      <label>Taux commission admin par défaut (%)
+        <div class="percent-input">
+          <input
+            type="number"
+            [(ngModel)]="platformCommissionAdminPercent"
+            name="tauxCommissionAdminDefaut"
+            required
+            min="0"
+            max="100"
+            step="0.01"
+          />
+          <span class="suffix">%</span>
+        </div>
+        <small class="hint">Appliqué aux nouvelles agences. Calculé sur le montant des opérations d'entrée.</small>
+      </label>
+      <p class="hint full-width">
+        Ce numéro et le montant s'affichent sur le formulaire public « Devenez collecteur ».
+        Les conditions d'utilisation se modifient dans <strong>Site web → Devenez collecteur</strong>.
+      </p>
+      <div class="full-width">
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  </section>
+}

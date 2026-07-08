@@ -1,0 +1,81 @@
+<div class="page-header">
+  <div>
+    <h1>Mon profil</h1>
+    <p>Gérez vos informations personnelles et votre mot de passe</p>
+  </div>
+</div>
+
+@if (profileMessage()) {
+  <div class="alert" [class.alert-info]="!profileMessage().includes('Erreur') && !profileMessage().includes('Impossible')" [class.alert-error]="profileMessage().includes('Erreur') || profileMessage().includes('Impossible')">
+    {{ profileMessage() }}
+  </div>
+}
+
+<div class="split-grid">
+  <section class="card profile-card">
+    <h3>Informations personnelles</h3>
+
+    @if (profile(); as p) {
+      <dl class="info-list profile-meta">
+        <div><dt>Identifiant</dt><dd>{{ p.username }}</dd></div>
+        <div><dt>Rôle</dt><dd>{{ roleLabel(p.role) }}</dd></div>
+        @if (p.agenceNom) {
+          <div><dt>Agence</dt><dd>{{ p.agenceNom }}</dd></div>
+        }
+      </dl>
+    }
+
+    <form class="profile-form" (ngSubmit)="saveProfile()">
+      <label>
+        Nom complet *
+        <input [(ngModel)]="form.nomComplet" name="nomComplet" required />
+      </label>
+      <label>
+        E-mail
+        <input [(ngModel)]="form.email" name="email" type="email" placeholder="exemple@email.com" />
+      </label>
+      <label>
+        Téléphone
+        <input [(ngModel)]="form.telephone" name="telephone" placeholder="+223..." />
+      </label>
+
+      <div class="photo-block">
+        <span class="field-label">Photo</span>
+        <app-photo-capture [photoUrl]="form.photoUrl" (photoUrlChange)="onPhotoChange($event)" />
+      </div>
+
+      <button type="submit" class="btn btn-primary" [disabled]="loadingProfile()">
+        {{ loadingProfile() ? 'Enregistrement...' : 'Enregistrer le profil' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h3>Changer le mot de passe</h3>
+    <p class="hint">Pour votre sécurité, saisissez votre mot de passe actuel.</p>
+
+    @if (passwordMessage()) {
+      <div class="alert alert-inline" [class.alert-info]="passwordMessage().includes('succès')" [class.alert-error]="!passwordMessage().includes('succès')">
+        {{ passwordMessage() }}
+      </div>
+    }
+
+    <form class="profile-form" (ngSubmit)="changePassword()">
+      <label>
+        Mot de passe actuel *
+        <input [(ngModel)]="passwordForm.currentPassword" name="currentPassword" type="password" autocomplete="current-password" />
+      </label>
+      <label>
+        Nouveau mot de passe *
+        <input [(ngModel)]="passwordForm.newPassword" name="newPassword" type="password" autocomplete="new-password" />
+      </label>
+      <label>
+        Confirmer le mot de passe *
+        <input [(ngModel)]="passwordForm.confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" />
+      </label>
+      <button type="submit" class="btn btn-secondary" [disabled]="loadingPassword()">
+        {{ loadingPassword() ? 'Modification...' : 'Modifier le mot de passe' }}
+      </button>
+    </form>
+  </section>
+</div>

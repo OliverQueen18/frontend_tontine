@@ -1,0 +1,215 @@
+<div class="page-header">
+  <div>
+    <h1>Collectes journalières</h1>
+    <p>Assistant de collecte avec signature électronique</p>
+  </div>
+  <div class="actions">
+    @if (mode === 'assistant') {
+      <button type="button" class="btn btn-primary" (click)="openQrScanner()">
+        <i class="pi pi-qrcode"></i> Scanner QR
+      </button>
+    }
+    <button class="btn" [class.btn-primary]="mode==='assistant'" [class.btn-secondary]="mode!=='assistant'" (click)="mode='assistant'">Assistant</button>
+    <button class="btn" [class.btn-primary]="mode==='historique'" [class.btn-secondary]="mode!=='historique'" (click)="mode='historique'; loadHistorique()">Historique</button>
+  </div>
+</div>
+
+@if (message()) {
+  <div class="alert alert-success">{{ message() }}</div>
+}
+
+@if (!auth.hasRole('AGENT')) {
+  <div class="toolbar card filters-bar">
+    <label class="filter-field">
+      <span class="filter-label">Agent</span>
+      <select [(ngModel)]="agentId" name="agentId" (ngModelChange)="loadPortefeuille(); loadHistorique()">
+        @for (a of agents(); track a.id) {
+          <option [ngValue]="a.id">{{ a.nomComplet }} ({{ a.code }})</option>
+        }
+      </select>
+    </label>
+  </div>
+}
+
+<div class="toolbar card filters-bar">
+  <label class="filter-field filter-field--grow">
+    <span class="filter-label">Rechercher</span>
+    <input
+      type="search"
+      [ngModel]="filterQ()"
+      (ngModelChange)="filterQ.set($event)"
+      name="filterQ"
+      [placeholder]="mode === 'assistant' ? 'Nom ou code client…' : 'Client, code ou n° reçu…'"
+    />
+  </label>
+
+  @if (mode === 'assistant') {
+    <label class="filter-field">
+      <span class="filter-label">Trier par</span>
+      <select [ngModel]="sortBy()" (ngModelChange)="sortBy.set($event)" name="sortBy">
+        <option value="nom">Nom (A → Z)</option>
+        <option value="solde">Solde (décroissant)</option>
+        <option value="jours">Jours payés</option>
+      </select>
+    </label>
+  }
+
+  <div class="filter-actions">
+    <button type="button" class="btn btn-secondary btn-sm" (click)="clearFilters()">Réinitialiser</button>
+    @if (mode === 'assistant') {
+      <span class="result-count">{{ filteredPortefeuille().length }} client(s)</span>
+    } @else {
+      <span class="result-count">{{ filteredHistorique().length }} collecte(s)</span>
+    }
+  </div>
+</div>
+
+@if (mode === 'assistant') {
+  <div class="client-list">
+    @for (item of filteredPortefeuille(); track item.clientId) {
+      <article
+        class="client-card"
+        [class.client-card--active]="isSelected(item)"
+        role="button"
+        tabindex="0"
+        (click)="startCollecte(item)"
+        (keydown.enter)="startCollecte(item)"
+        (keydown.space)="$event.preventDefault(); startCollecte(item)"
+      >
+        <div class="client-card__photo">
+          @if (item.clientPhotoUrl) {
+            <img [src]="photoSrc(item.clientPhotoUrl)" alt="" />
+          } @else {
+            <span class="client-card__photo-empty"><i class="pi pi-user"></i></span>
+          }
+        </div>
+
+        <div class="client-card__main">
+          <div class="client-card__head">
+            <h3>{{ item.clientNom }}</h3>
+            <span class="client-card__code">{{ item.clientCode }}</span>
+          </div>
+          <div class="client-card__stats">
+            <span><small>Montant/j</small> {{ item.montantJournalier | fcfa }}</span>
+            <span><small>Solde</small> {{ item.soldeEpargne | fcfa }}</span>
+            <span><small>Jours payés</small> {{ item.nombreJoursPayes ?? 0 }}</span>
+            <span><small>Retrait prévu</small> {{ item.dateProbableRetrait ? (item.dateProbableRetrait | date:'dd/MM/yyyy') : '—' }}</span>
+          </div>
+        </div>
+
+        <div class="client-card__action">
+          <i class="pi pi-chevron-right"></i>
+          <span>Collecter</span>
+        </div>
+      </article>
+    } @empty {
+      <div class="empty-state card">
+        @if (filterQ()) {
+          <p>Aucun client ne correspond à « {{ filterQ() }} »</p>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="clearFilters()">Effacer la recherche</button>
+        } @else {
+          <p>Aucun client dans le portefeuille</p>
+        }
+      </div>
+    }
+  </div>
+} @else {
+  <div class="history-list">
+    @for (c of filteredHistorique(); track c.id) {
+      <article class="history-card card">
+        <div class="history-card__date">
+          <i class="pi pi-calendar"></i>
+          {{ c.dateHeure | date:'dd/MM/yyyy HH:mm' }}
+        </div>
+        <div class="history-card__body">
+          <strong>{{ c.clientNom }}</strong>
+          <span class="history-card__recu">{{ c.numeroRecu }}</span>
+        </div>
+        <div class="history-card__meta">
+          <span>{{ c.nombreJoursPayes ?? '—' }} j</span>
+          <strong>{{ c.montantRecu | fcfa }}</strong>
+        </div>
+      </article>
+    } @empty {
+      <div class="empty-state card">
+        <p>Aucune collecte trouvée</p>
+      </div>
+    }
+  </div>
+}
+
+@if (showCollecteForm && selected) {
+  <div class="modal-backdrop" (click)="cancelCollecte()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="collecte-client-head">
+        <div class="collecte-client-head__photo">
+          @if (selected.clientPhotoUrl) {
+            <img [src]="photoSrc(selected.clientPhotoUrl)" alt="" />
+          } @else {
+            <span class="collecte-client-head__photo-empty"><i class="pi pi-user"></i></span>
+          }
+        </div>
+        <div>
+          <h3>Collecte — {{ selected.clientNom }}</h3>
+          <p class="hint">{{ selected.clientCode }} · Montant journalier : <strong>{{ selected.montantJournalier | fcfa }}</strong></p>
+        </div>
+      </div>
+
+      <div class="sync-tabs">
+        <button type="button" class="btn btn-sm" [class.btn-primary]="syncFrom==='jours'" [class.btn-secondary]="syncFrom!=='jours'" (click)="setSyncMode('jours')">Saisir les jours</button>
+        <button type="button" class="btn btn-sm" [class.btn-primary]="syncFrom==='montant'" [class.btn-secondary]="syncFrom!=='montant'" (click)="setSyncMode('montant')">Saisir le montant</button>
+      </div>
+
+      <form class="form-grid collecte-form" (ngSubmit)="confirmCollecteForm()">
+        <label>Nombre de jours payés
+          <input type="number" [(ngModel)]="nombreJours" name="nombreJours" min="0.01" step="0.01"
+            [readonly]="syncFrom==='montant'" (ngModelChange)="onJoursChange()" />
+        </label>
+        <label>Montant total collecté (FCFA)
+          <input type="number" [(ngModel)]="montantRecu" name="montantRecu" min="1"
+            [readonly]="syncFrom==='jours'" (ngModelChange)="onMontantChange()" />
+        </label>
+        <p class="calc-hint">
+          Calcul : {{ nombreJours }} j × {{ selected.montantJournalier | fcfa }} =
+          <strong>{{ montantRecu | fcfa }}</strong>
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="cancelCollecte()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Continuer vers signature</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (showSignature && selected) {
+  <div class="modal-backdrop signature-modal">
+    <div class="modal modal-lg">
+      <div class="collecte-client-head">
+        <div class="collecte-client-head__photo">
+          @if (selected.clientPhotoUrl) {
+            <img [src]="photoSrc(selected.clientPhotoUrl)" alt="" />
+          } @else {
+            <span class="collecte-client-head__photo-empty"><i class="pi pi-user"></i></span>
+          }
+        </div>
+        <div>
+          <h3>Signature — {{ selected.clientNom }}</h3>
+          <p>Montant : <strong>{{ montantRecu | fcfa }}</strong> · {{ nombreJours }} jour(s)</p>
+        </div>
+      </div>
+      <p class="hint">Le client signe avec le doigt ou la souris</p>
+      <app-signature-pad (signed)="onSigned($event)" (cancel)="showSignature=false; showCollecteForm=true" />
+    </div>
+  </div>
+}
+
+@if (showQrScanner) {
+  <div class="modal-backdrop" (click)="closeQrScanner()">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <h3>Scanner la carte client</h3>
+      <p class="hint">Scannez le QR code pour ouvrir directement le formulaire de collecte</p>
+      <app-qr-scanner (scanned)="onQrScanned($event)" (cancelled)="closeQrScanner()" />
+    </div>
+  </div>
+}

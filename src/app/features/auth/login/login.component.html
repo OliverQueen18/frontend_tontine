@@ -1,0 +1,259 @@
+<div class="login-page">
+
+  <div class="login-card">
+
+    <div class="login-brand">
+
+      <img src="logo-tontine-marche.png" alt="Tontine Marché" class="brand-logo brand-logo--login" />
+
+      <p>{{ view() === 'login' ? 'Connexion sécurisée à la plateforme' : 'Réinitialisation du mot de passe' }}</p>
+
+    </div>
+
+
+
+    @if (view() === 'login') {
+
+      <form (ngSubmit)="submit()">
+
+        <label>Nom d'utilisateur
+
+          <input [(ngModel)]="username" name="username" autocomplete="username" required />
+
+        </label>
+
+        <label>Mot de passe
+
+          <input type="password" [(ngModel)]="password" name="password" autocomplete="current-password" required />
+
+        </label>
+
+        <div class="login-options">
+
+          <label class="checkbox">
+
+            <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" />
+
+            Se souvenir de moi
+
+          </label>
+
+          <button type="button" class="link-btn" (click)="openForgot()">Mot de passe oublié ?</button>
+
+        </div>
+
+
+
+        @if (error()) {
+
+          <div class="alert alert-error">{{ error() }}</div>
+
+        }
+
+        @if (success()) {
+
+          <div class="alert alert-success">{{ success() }}</div>
+
+        }
+
+
+
+        <button class="btn btn-primary btn-block" type="submit" [disabled]="loading()">
+
+          {{ loading() ? 'Connexion...' : 'Se connecter' }}
+
+        </button>
+
+      </form>
+
+
+
+      <div class="login-help">
+
+        <a routerLink="/">Retour au site</a>
+
+        <span>Version {{ version }}</span>
+
+      </div>
+
+
+
+      <div class="demo-accounts">
+
+        <strong>Comptes de démonstration</strong>
+
+        <ul>
+
+          <li>admin / admin123 (Super Admin)</li>
+
+          <li>admin.bko / admin123 (Admin agence)</li>
+
+          <li>agent001 / agent123 (Agent)</li>
+
+        </ul>
+
+      </div>
+
+    } @else {
+
+      <!-- Progress bar -->
+
+      <div class="reset-progress">
+
+        <div class="reset-progress-bar">
+
+          <div class="reset-progress-fill" [style.width.%]="progressPercent"></div>
+
+        </div>
+
+        <div class="reset-progress-steps">
+
+          <span [class.active]="forgotStep() >= 1">1. Identifiant</span>
+
+          <span [class.active]="forgotStep() >= 2">2. OTP</span>
+
+          <span [class.active]="forgotStep() >= 3">3. Mot de passe</span>
+
+        </div>
+
+        <p class="reset-progress-label">Étape en cours : <strong>{{ progressLabel }}</strong></p>
+
+      </div>
+
+
+
+      @if (error()) {
+
+        <div class="alert alert-error">{{ error() }}</div>
+
+      }
+
+      @if (success()) {
+
+        <div class="alert alert-success">{{ success() }}</div>
+
+      }
+
+
+
+      @if (forgotStep() === 1) {
+
+        <form (ngSubmit)="requestOtp()" class="forgot-form">
+
+          <label>Nom d'utilisateur
+
+            <input [(ngModel)]="forgotUsername" name="forgotUsername" autocomplete="username" required />
+
+          </label>
+
+          <p class="hint">Un code à 6 chiffres sera envoyé à l'adresse email associée à votre compte.</p>
+
+          <button class="btn btn-primary btn-block" type="submit" [disabled]="loading()">
+
+            {{ loading() ? 'Envoi...' : 'Envoyer le code OTP' }}
+
+          </button>
+
+        </form>
+
+      }
+
+
+
+      @if (forgotStep() === 2) {
+
+        <form (ngSubmit)="verifyOtp()" class="forgot-form">
+
+          @if (maskedEmail) {
+
+            <p class="hint">Code envoyé à <strong>{{ maskedEmail }}</strong></p>
+
+          }
+
+          <label>Code OTP (6 chiffres)
+
+            <input
+
+              [(ngModel)]="otp"
+
+              name="otp"
+
+              inputmode="numeric"
+
+              maxlength="6"
+
+              pattern="\d{6}"
+
+              placeholder="000000"
+
+              class="otp-input"
+
+              required
+
+            />
+
+          </label>
+
+          @if (otpCountdown() > 0) {
+
+            <p class="otp-timer">Code valide encore : {{ formatCountdown() }}</p>
+
+          } @else {
+
+            <button type="button" class="link-btn" (click)="resendOtp()">Renvoyer le code</button>
+
+          }
+
+          <button class="btn btn-primary btn-block" type="submit" [disabled]="loading()">
+
+            {{ loading() ? 'Vérification...' : 'Vérifier le code' }}
+
+          </button>
+
+        </form>
+
+      }
+
+
+
+      @if (forgotStep() === 3) {
+
+        <form (ngSubmit)="resetPassword()" class="forgot-form">
+
+          <label>Nouveau mot de passe
+
+            <input type="password" [(ngModel)]="newPassword" name="newPassword" autocomplete="new-password" required />
+
+          </label>
+
+          <label>Confirmer le mot de passe
+
+            <input type="password" [(ngModel)]="confirmPassword" name="confirmPassword" autocomplete="new-password" required />
+
+          </label>
+
+          <button class="btn btn-primary btn-block" type="submit" [disabled]="loading()">
+
+            {{ loading() ? 'Enregistrement...' : 'Réinitialiser le mot de passe' }}
+
+          </button>
+
+        </form>
+
+      }
+
+
+
+      <div class="login-help">
+
+        <button type="button" class="link-btn" (click)="backToLogin()">← Retour à la connexion</button>
+
+      </div>
+
+    }
+
+  </div>
+
+  <app-chat-assistant context="public" />
+</div>
+

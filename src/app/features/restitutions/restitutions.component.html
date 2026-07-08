@@ -1,0 +1,287 @@
+<div class="page-header">
+
+  <div>
+
+    <h1>Restitutions</h1>
+
+    @if (canEffectuer) {
+
+      <p>Le caissier effectue le paiement ; l'agent collecteur valide la commission et finalise par la signature du client</p>
+
+    } @else if (isCollecteur) {
+
+      <p>Validez la commission proposée et finalisez les restitutions en faisant signer vos clients</p>
+
+    } @else {
+
+      <p>Suivi des restitutions de l'agence</p>
+
+    }
+
+  </div>
+
+</div>
+
+
+
+@if (message()) {
+
+  <div class="alert alert-success">{{ message() }}</div>
+
+}
+
+
+
+@if (isCollecteur && enAttente().length) {
+
+  <div class="card" style="margin-bottom:1rem">
+
+    <h3>En attente de validation et signature</h3>
+
+    <table>
+
+      <thead>
+
+        <tr>
+
+          <th>Date</th><th>Reçu</th><th>Client</th><th>Total</th>
+
+          <th>Commission auto</th><th>Commission retenue</th><th>Net</th><th></th>
+
+        </tr>
+
+      </thead>
+
+      <tbody>
+
+        @for (r of enAttente(); track r.id) {
+
+          <tr>
+
+            <td>{{ r.dateHeure | date:'dd/MM/yyyy HH:mm' }}</td>
+
+            <td>{{ r.numeroRecu }}</td>
+
+            <td>{{ r.clientNom }}</td>
+
+            <td>{{ r.totalCollecte | fcfa }}</td>
+
+            <td>{{ r.commissionCalculee | fcfa }}</td>
+
+            <td class="commission-cell">
+
+              <app-fcfa-amount-input
+
+                [ngModel]="getCommissionDraft(r)"
+
+                (ngModelChange)="setCommissionDraft(r, $event)"
+
+                [name]="'commission-' + r.id"
+
+                ariaLabel="Commission retenue"
+
+              />
+
+              <button type="button" class="btn btn-secondary btn-sm" (click)="enregistrerCommission(r)">
+
+                OK
+
+              </button>
+
+            </td>
+
+            <td>{{ r.montantNet | fcfa }}</td>
+
+            <td>
+
+              <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirSignature(r)">
+
+                Faire signer
+
+              </button>
+
+            </td>
+
+          </tr>
+
+        }
+
+      </tbody>
+
+    </table>
+
+    <p class="hint" style="margin-top:0.75rem">
+
+      La commission automatique est proposée selon la grille. Vous pouvez la modifier (y compris 0) avant la signature.
+
+    </p>
+
+  </div>
+
+}
+
+
+
+@if (canEffectuer) {
+
+  <div class="card">
+
+    <div class="form-grid">
+
+      <label>Client
+
+        <select [(ngModel)]="clientId" name="clientId" (ngModelChange)="calculer()">
+
+          <option [ngValue]="null">Rechercher un client...</option>
+
+          @for (c of clients(); track c.id) {
+
+            <option [ngValue]="c.id">{{ c.code }} — {{ c.nomComplet }}</option>
+
+          }
+
+        </select>
+
+      </label>
+
+    </div>
+
+
+
+    @if (calcul(); as calc) {
+
+      <div class="kpi-grid" style="margin-top:1rem">
+
+        <div class="kpi"><span>Total collecté</span><strong>{{ asNumber(calc['totalCollecte']) | fcfa }}</strong></div>
+
+        <div class="kpi warn"><span>Commission estimée</span><strong>{{ asNumber(calc['commission']) | fcfa }}</strong></div>
+
+        <div class="kpi success"><span>Montant à restituer</span><strong>{{ asNumber(calc['montantNet']) | fcfa }}</strong></div>
+
+      </div>
+
+      @if (calc['trancheCommission']) {
+
+        <p class="hint" style="margin-top:0.75rem">Tranche appliquée : {{ calc['trancheCommission'] }}</p>
+
+      }
+
+      <p class="hint" style="margin-top:0.5rem">L'agent collecteur validera ou ajustera la commission avant signature.</p>
+
+      <div style="margin-top:1rem">
+
+        <button type="button" class="btn btn-primary" (click)="effectuer()">Initier la restitution</button>
+
+      </div>
+
+    }
+
+  </div>
+
+}
+
+
+
+<div class="card table-card" style="margin-top:1rem">
+
+  <h3>Historique</h3>
+
+  <table>
+
+    <thead>
+
+      <tr><th>Date</th><th>Reçu</th><th>Client</th><th>Total</th><th>Commission</th><th>Net</th><th>Statut</th></tr>
+
+    </thead>
+
+    <tbody>
+
+      @for (r of restitutions(); track r.id) {
+
+        <tr>
+
+          <td>{{ r.dateHeure | date:'dd/MM/yyyy HH:mm' }}</td>
+
+          <td>{{ r.numeroRecu }}</td>
+
+          <td>{{ r.clientNom }}</td>
+
+          <td>{{ r.totalCollecte | fcfa }}</td>
+
+          <td>{{ r.commission | fcfa }}</td>
+
+          <td>{{ r.montantNet | fcfa }}</td>
+
+          <td>
+
+            <span class="badge" [class.badge-success]="r.validee">
+
+              {{ r.validee ? 'Finalisée' : 'En attente signature' }}
+
+            </span>
+
+          </td>
+
+        </tr>
+
+      } @empty {
+
+        <tr><td colspan="7">Aucune restitution</td></tr>
+
+      }
+
+    </tbody>
+
+  </table>
+
+</div>
+
+
+
+@if (showSignature && selectedRestitution; as r) {
+
+  <div class="modal-backdrop signature-modal">
+
+    <div class="modal modal-lg">
+
+      <h3>Signature du client</h3>
+
+      <p class="hint">
+
+        Restitution {{ r.numeroRecu }} — {{ r.clientNom }}
+
+      </p>
+
+      <div class="kpi-grid" style="margin-bottom:1rem">
+
+        <div class="kpi"><span>Total collecté</span><strong>{{ r.totalCollecte | fcfa }}</strong></div>
+
+        <div class="kpi warn"><span>Commission auto</span><strong>{{ r.commissionCalculee | fcfa }}</strong></div>
+
+        <div class="kpi success"><span>Net client</span><strong>{{ (r.totalCollecte ?? 0) - commissionDraft | fcfa }}</strong></div>
+
+      </div>
+
+      <label>Commission retenue (modifiable, 0 accepté)
+
+        <app-fcfa-amount-input
+
+          [(ngModel)]="commissionDraft"
+
+          name="signatureCommission"
+
+          ariaLabel="Commission retenue"
+
+        />
+
+      </label>
+
+      <app-signature-pad (signed)="onSigned($event)" (cancel)="showSignature=false" />
+
+    </div>
+
+  </div>
+
+}
+
+

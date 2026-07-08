@@ -1,0 +1,89 @@
+<div class="page-header">
+  <div>
+    <h1>Gestion de caisse</h1>
+    <p>Ouverture, mouvements et clôture quotidienne</p>
+  </div>
+</div>
+
+@if (message()) {
+  <div class="alert alert-info">{{ message() }}</div>
+}
+
+@if (auth.hasRole('SUPER_ADMIN')) {
+  <div class="toolbar card">
+    <label>Agence
+      <select [(ngModel)]="agenceId" name="agenceId" (ngModelChange)="load()">
+        @for (a of agences(); track a.id) {
+          <option [ngValue]="a.id">{{ a.nom }}</option>
+        }
+      </select>
+    </label>
+  </div>
+}
+
+@if (!caisse()) {
+  <div class="card">
+    <h3>Ouvrir la caisse du jour</h3>
+    <div class="form-grid">
+      <label>Solde initial (laisser vide pour report automatique)
+        <input type="number" [(ngModel)]="soldeInitial" name="soldeInitial" />
+      </label>
+    </div>
+    <button class="btn btn-primary" style="margin-top:1rem" (click)="ouvrir()">Ouvrir la caisse</button>
+  </div>
+} @else {
+  <div class="kpi-grid">
+    <div class="kpi"><span>Solde initial</span><strong>{{ caisse()!.soldeInitial | fcfa }}</strong></div>
+    <div class="kpi success"><span>Entrées</span><strong>{{ caisse()!.totalEntrees | fcfa }}</strong></div>
+    <div class="kpi warn"><span>Sorties</span><strong>{{ caisse()!.totalSorties | fcfa }}</strong></div>
+    <div class="kpi"><span>Solde théorique</span><strong>{{ caisse()!.soldeTheorique | fcfa }}</strong></div>
+    @if (caisse()!.statut === 'CLOTUREE') {
+      <div class="kpi"><span>Solde réel</span><strong>{{ caisse()!.soldeReel | fcfa }}</strong></div>
+      <div class="kpi" [class.warn]="(caisse()!.ecart || 0) !== 0"><span>Écart</span><strong>{{ caisse()!.ecart | fcfa }}</strong></div>
+    }
+  </div>
+
+  <div class="split-grid" style="margin-top:1rem">
+    <section class="card table-card">
+      <h3>Mouvements</h3>
+      <table>
+        <thead><tr><th>Heure</th><th>Type</th><th>Catégorie</th><th>Libellé</th><th>Montant</th></tr></thead>
+        <tbody>
+          @for (m of caisse()!.mouvements || []; track m.id) {
+            <tr>
+              <td>{{ m.dateHeure | date:'HH:mm' }}</td>
+              <td>{{ m.type }}</td>
+              <td>{{ m.categorie }}</td>
+              <td>{{ m.libelle }}</td>
+              <td>{{ m.montant | fcfa }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5">Aucun mouvement</td></tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    @if (caisse()!.statut === 'OUVERTE') {
+      <section class="card">
+        <h3>Clôture de caisse</h3>
+        <p>Solde attendu : <strong>{{ caisse()!.soldeTheorique | fcfa }}</strong></p>
+        <div class="form-grid">
+          <label>Solde réel
+            <input type="number" [(ngModel)]="soldeReel" name="soldeReel" required />
+          </label>
+          <label>Observation
+            <textarea [(ngModel)]="observation" name="observation" rows="3"></textarea>
+          </label>
+        </div>
+        <button class="btn btn-primary" style="margin-top:1rem" (click)="cloturer()">Valider la clôture</button>
+      </section>
+    } @else {
+      <section class="card">
+        <h3>Caisse clôturée</h3>
+        <p>Observation : {{ caisse()!.observation || '—' }}</p>
+        <p>Clôturée le {{ caisse()!.dateCloture | date:'dd/MM/yyyy HH:mm' }}</p>
+      </section>
+    }
+  </div>
+}

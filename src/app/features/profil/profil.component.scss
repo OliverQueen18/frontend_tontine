@@ -1,0 +1,45 @@
+.profile-card h3 {
+  margin-bottom: 1rem;
+}
+
+.profile-meta {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 500;
+}
+
+.photo-block {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.field-label {
+  font-weight: 500;
+}
+
+.alert-inline {
+  margin-bottom: 0.75rem;
+}
+
+.alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+@media (max-width: 900px) {
+  .split-grid {
+    grid-template-columns: 1fr;
+  }
+}

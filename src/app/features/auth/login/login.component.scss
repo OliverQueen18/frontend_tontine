@@ -1,0 +1,159 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 40%),
+    linear-gradient(160deg, #0b1f3a, #12325c 55%, #0f766e);
+}
+
+.login-card {
+  width: min(440px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  text-align: center;
+
+  p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+}
+
+form, .forgot-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.login-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #1a5632;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.login-help {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+
+  a {
+    color: var(--navy);
+  }
+}
+
+.demo-accounts {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.88rem;
+  color: var(--muted);
+
+  ul {
+    margin: 0.5rem 0 0;
+    padding-left: 1.1rem;
+  }
+}
+
+.reset-progress {
+  margin-bottom: 1.25rem;
+}
+
+.reset-progress-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.reset-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1a5632, #16a34a);
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+
+.reset-progress-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.25rem;
+  margin-top: 0.65rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+
+  span.active {
+    color: #1a5632;
+    font-weight: 700;
+  }
+}
+
+.reset-progress-label {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.otp-input {
+  font-size: 1.5rem;
+  letter-spacing: 0.35em;
+  text-align: center;
+  font-weight: 700;
+}
+
+.otp-timer {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #c2410c;
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .login-options {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .reset-progress-steps {
+    font-size: 0.65rem;
+  }
+
+  .demo-accounts {
+    font-size: 0.82rem;
+  }
+}

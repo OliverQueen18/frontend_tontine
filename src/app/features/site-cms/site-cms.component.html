@@ -1,0 +1,260 @@
+<div class="cms-page">
+  <div class="page-header">
+    <div>
+      <h1>Site web public</h1>
+      <p>Gérez le contenu de la page d'accueil comme un CMS WordPress</p>
+    </div>
+    <a href="/" target="_blank" rel="noopener" class="btn btn-secondary">
+      <i class="pi pi-external-link"></i> Voir le site
+    </a>
+  </div>
+
+  @if (message()) {
+    <div class="alert alert-info">{{ message() }}</div>
+  }
+  @if (error()) {
+    <div class="alert alert-danger">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="cms-loading"><i class="pi pi-spin pi-spinner"></i> Chargement...</div>
+  } @else {
+    <div class="cms-shell">
+      <!-- Sidebar WordPress-style -->
+      <aside class="cms-sidebar">
+        <div class="cms-sidebar-title">Sections</div>
+        @for (s of sections; track s.key) {
+          <button
+            type="button"
+            class="cms-nav-item"
+            [class.active]="activeSection() === s.key"
+            (click)="selectSection(s.key)"
+          >
+            <i [class]="s.icon"></i>
+            <span>{{ s.label }}</span>
+            @if (lastUpdated(s.key)) {
+              <small>{{ lastUpdated(s.key) }}</small>
+            }
+          </button>
+        }
+      </aside>
+
+      <!-- Editor panel -->
+      <div class="cms-editor card">
+        <div class="cms-editor-header">
+          <h2>{{ activeLabel() }}</h2>
+          <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
+            @if (saving()) {
+              <i class="pi pi-spin pi-spinner"></i> Enregistrement...
+            } @else {
+              <i class="pi pi-save"></i> Enregistrer
+            }
+          </button>
+        </div>
+
+        <!-- Layout -->
+        @if (activeSection() === 'layout') {
+          <div class="form-grid cms-form">
+            <h3 class="form-section-title">Barre supérieure</h3>
+            <label>Téléphone<input [(ngModel)]="layout.phone" name="phone" /></label>
+            <label>Email<input [(ngModel)]="layout.email" name="email" /></label>
+            <label>Label réseaux sociaux<input [(ngModel)]="layout.socialLabel" name="socialLabel" /></label>
+            <label>Facebook<input [(ngModel)]="layout.facebook" name="facebook" /></label>
+            <label>Instagram<input [(ngModel)]="layout.instagram" name="instagram" /></label>
+            <label>WhatsApp<input [(ngModel)]="layout.whatsapp" name="whatsapp" /></label>
+            <label>YouTube<input [(ngModel)]="layout.youtube" name="youtube" /></label>
+
+            <h3 class="form-section-title">Marque</h3>
+            <label>Nom<input [(ngModel)]="layout.brandName" name="brandName" /></label>
+            <label>Slogan<input [(ngModel)]="layout.brandTagline" name="brandTagline" /></label>
+            <label class="full-width">
+              Icône (URL)
+              <div class="image-field">
+                <input [(ngModel)]="layout.brandIconUrl" name="brandIconUrl" />
+                <input type="file" accept="image/*" (change)="onFileSelected($event, 'layout.brandIconUrl')" />
+                @if (layout.brandIconUrl) {
+                  <img [src]="previewUrl(layout.brandIconUrl)" alt="" class="thumb" />
+                }
+              </div>
+            </label>
+            <label>Bouton connexion<input [(ngModel)]="layout.loginButtonLabel" name="loginBtn" /></label>
+            <label>Bouton contact<input [(ngModel)]="layout.contactButtonLabel" name="contactBtn" /></label>
+            <label>Lien Devenez collecteur<input [(ngModel)]="layout.collecteurRoute" name="collecteurRoute" /></label>
+
+            <h3 class="form-section-title">Pied de page</h3>
+            <label class="full-width">Description<textarea [(ngModel)]="layout.footerDescription" name="footerDesc" rows="3"></textarea></label>
+            <label class="full-width">
+              Logo (URL)
+              <div class="image-field">
+                <input [(ngModel)]="layout.footerLogoUrl" name="footerLogoUrl" />
+                <input type="file" accept="image/*" (change)="onFileSelected($event, 'layout.footerLogoUrl')" />
+                @if (layout.footerLogoUrl) {
+                  <img [src]="previewUrl(layout.footerLogoUrl)" alt="" class="thumb" />
+                }
+              </div>
+            </label>
+            <label>Adresse<input [(ngModel)]="layout.footerAddress" name="footerAddress" /></label>
+            <label class="full-width">Copyright<input [(ngModel)]="layout.footerCopyright" name="footerCopyright" /></label>
+          </div>
+        }
+
+        <!-- Hero -->
+        @if (activeSection() === 'hero') {
+          <div class="form-grid cms-form">
+            <h3 class="form-section-title">Titre principal</h3>
+            <label>Mot vert<input [(ngModel)]="hero.highlightGreen" name="hGreen" /></label>
+            <label>Mot orange<input [(ngModel)]="hero.highlightOrange" name="hOrange" /></label>
+            <label>Mot rouge<input [(ngModel)]="hero.highlightRed" name="hRed" /></label>
+            <label class="full-width">Texte intermédiaire<input [(ngModel)]="hero.headlineMiddle" name="hMiddle" /></label>
+            <label class="full-width">Sous-titre<textarea [(ngModel)]="hero.subtitle" name="subtitle" rows="3"></textarea></label>
+
+            <h3 class="form-section-title">Boutons d'action</h3>
+            <label>Bouton principal<input [(ngModel)]="hero.ctaPrimaryLabel" name="cta1Label" /></label>
+            <label>Lien principal<input [(ngModel)]="hero.ctaPrimaryRoute" name="cta1Route" /></label>
+            <label>Bouton secondaire<input [(ngModel)]="hero.ctaSecondaryLabel" name="cta2Label" /></label>
+            <label>Lien secondaire<input [(ngModel)]="hero.ctaSecondaryRoute" name="cta2Route" /></label>
+
+            <h3 class="form-section-title">Preuve sociale</h3>
+            <label>Préfixe<input [(ngModel)]="hero.socialProofPrefix" name="spPrefix" /></label>
+            <label>Chiffre<input [(ngModel)]="hero.socialProofCount" name="spCount" /></label>
+            <label>Suffixe<input [(ngModel)]="hero.socialProofSuffix" name="spSuffix" /></label>
+            <label class="full-width">Initiales avatars (séparées par virgule)
+              <input [(ngModel)]="avatarsText" name="avatars" />
+            </label>
+
+            <h3 class="form-section-title">Carte transaction (démo)</h3>
+            <label>Titre<input [(ngModel)]="hero.txTitle" name="txTitle" /></label>
+            <label>Montant<input [(ngModel)]="hero.txAmount" name="txAmount" /></label>
+            <label>Statut<input [(ngModel)]="hero.txStatus" name="txStatus" /></label>
+            <label>Heure<input [(ngModel)]="hero.txTime" name="txTime" /></label>
+
+            <h3 class="form-section-title">Images</h3>
+            <label class="full-width">
+              Image de fond
+              <div class="image-field">
+                <input [(ngModel)]="hero.backgroundImageUrl" name="bgUrl" />
+                <input type="file" accept="image/*" (change)="onFileSelected($event, 'hero.backgroundImageUrl')" />
+                @if (hero.backgroundImageUrl) {
+                  <img [src]="previewUrl(hero.backgroundImageUrl)" alt="" class="thumb wide" />
+                }
+              </div>
+            </label>
+            <label class="full-width">
+              Photo personnage
+              <div class="image-field">
+                <input [(ngModel)]="hero.personImageUrl" name="personUrl" />
+                <input type="file" accept="image/*" (change)="onFileSelected($event, 'hero.personImageUrl')" />
+                @if (hero.personImageUrl) {
+                  <img [src]="previewUrl(hero.personImageUrl)" alt="" class="thumb" />
+                }
+              </div>
+            </label>
+          </div>
+        }
+
+        <!-- Features -->
+        @if (activeSection() === 'features') {
+          <div class="cms-form">
+            <div class="list-header">
+              <h3>Avantages ({{ features.length }})</h3>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="addFeature()">
+                <i class="pi pi-plus"></i> Ajouter
+              </button>
+            </div>
+            @for (f of features; track $index; let i = $index) {
+              <div class="repeat-card">
+                <div class="repeat-card-header">
+                  <strong>Avantage {{ i + 1 }}</strong>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="removeFeature(i)">Supprimer</button>
+                </div>
+                <div class="form-grid">
+                  <label>Icône (classe PrimeIcons)<input [(ngModel)]="f.icon" [name]="'fIcon' + i" /></label>
+                  <label>Titre<input [(ngModel)]="f.title" [name]="'fTitle' + i" /></label>
+                  <label class="full-width">Description<input [(ngModel)]="f.desc" [name]="'fDesc' + i" /></label>
+                  <label>Couleur fond<input [(ngModel)]="f.bg" [name]="'fBg' + i" type="color" /></label>
+                  <label>Couleur icône<input [(ngModel)]="f.color" [name]="'fColor' + i" type="color" /></label>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- About -->
+        @if (activeSection() === 'about') {
+          <div class="form-grid cms-form">
+            <label>Label section<input [(ngModel)]="about.label" name="aboutLabel" /></label>
+            <label class="full-width">Titre<input [(ngModel)]="about.title" name="aboutTitle" /></label>
+            <label class="full-width">Paragraphe 1<textarea [(ngModel)]="about.paragraph1" name="p1" rows="3"></textarea></label>
+            <label class="full-width">Paragraphe 2<textarea [(ngModel)]="about.paragraph2" name="p2" rows="3"></textarea></label>
+            <label>Texte bouton<input [(ngModel)]="about.ctaLabel" name="aboutCta" /></label>
+            <label>Lien bouton<input [(ngModel)]="about.ctaRoute" name="aboutRoute" /></label>
+            <label>Chiffre badge<input [(ngModel)]="about.badgeCount" name="badgeCount" /></label>
+            <label>Label badge<input [(ngModel)]="about.badgeLabel" name="badgeLabel" /></label>
+            <label class="full-width">
+              Image
+              <div class="image-field">
+                <input [(ngModel)]="about.imageUrl" name="aboutImg" />
+                <input type="file" accept="image/*" (change)="onFileSelected($event, 'about.imageUrl')" />
+                @if (about.imageUrl) {
+                  <img [src]="previewUrl(about.imageUrl)" alt="" class="thumb wide" />
+                }
+              </div>
+            </label>
+          </div>
+        }
+
+        <!-- Steps -->
+        @if (activeSection() === 'steps') {
+          <div class="cms-form">
+            <div class="form-grid">
+              <label>Label section<input [(ngModel)]="steps.label" name="stepsLabel" /></label>
+              <label class="full-width">Titre<input [(ngModel)]="steps.title" name="stepsTitle" /></label>
+            </div>
+            <div class="list-header">
+              <h3>Étapes ({{ steps.items.length }})</h3>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="addStep()">
+                <i class="pi pi-plus"></i> Ajouter
+              </button>
+            </div>
+            @for (step of steps.items; track $index; let i = $index) {
+              <div class="repeat-card">
+                <div class="repeat-card-header">
+                  <strong>Étape {{ step.num }}</strong>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="removeStep(i)">Supprimer</button>
+                </div>
+                <div class="form-grid">
+                  <label>Numéro<input [(ngModel)]="step.num" [name]="'sNum' + i" /></label>
+                  <label>Icône<input [(ngModel)]="step.icon" [name]="'sIcon' + i" /></label>
+                  <label>Titre<input [(ngModel)]="step.title" [name]="'sTitle' + i" /></label>
+                  <label class="full-width">Description<input [(ngModel)]="step.desc" [name]="'sDesc' + i" /></label>
+                  <label>Couleur fond<input [(ngModel)]="step.bg" [name]="'sBg' + i" type="color" /></label>
+                  <label>Couleur icône<input [(ngModel)]="step.color" [name]="'sColor' + i" type="color" /></label>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- CTA -->
+        @if (activeSection() === 'cta') {
+          <div class="form-grid cms-form">
+            <label class="full-width">Titre<input [(ngModel)]="cta.title" name="ctaTitle" /></label>
+            <label class="full-width">Sous-titre<textarea [(ngModel)]="cta.subtitle" name="ctaSub" rows="2"></textarea></label>
+            <label>Texte bouton<input [(ngModel)]="cta.buttonLabel" name="ctaBtn" /></label>
+            <label>Lien bouton<input [(ngModel)]="cta.buttonRoute" name="ctaRoute" /></label>
+          </div>
+        }
+
+        @if (activeSection() === 'collecteur') {
+          <div class="form-grid cms-form">
+            <label class="full-width">Titre panneau gauche<input [(ngModel)]="collecteur.title" name="colTitle" /></label>
+            <label class="full-width">Sous-titre<textarea [(ngModel)]="collecteur.subtitle" name="colSub" rows="2"></textarea></label>
+            <label>Titre formulaire<input [(ngModel)]="collecteur.formTitle" name="colFormTitle" /></label>
+            <label>Sous-titre formulaire<input [(ngModel)]="collecteur.formSubtitle" name="colFormSub" /></label>
+            <label class="full-width">Conditions d'utilisation<textarea [(ngModel)]="collecteur.conditionsUtilisation" name="colTerms" rows="8"></textarea></label>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,137 @@
+<div class="page-header">
+  <div>
+    <h1>{{ pageTitle }}</h1>
+    <p>{{ isAdminAgence && !isSuperAdmin ? 'Ajoutez ou retirez les membres de votre agence' : 'Gestion des comptes et des permissions' }}</p>
+  </div>
+  <button class="btn btn-primary" (click)="openCreate()">Nouvel utilisateur</button>
+</div>
+
+@if (message()) {
+  <div class="alert alert-info">{{ message() }}</div>
+}
+
+<div class="split-grid utilisateurs-layout">
+  <div>
+    <div class="toolbar card">
+      @if (isSuperAdmin) {
+        <label>
+          Agence
+          <select [(ngModel)]="filterAgenceId" name="filterAgence" (ngModelChange)="load()">
+            <option [ngValue]="null">Toutes</option>
+            @for (a of agences(); track a.id) {
+              <option [ngValue]="a.id">{{ a.nom }}</option>
+            }
+          </select>
+        </label>
+      }
+      <label>
+        Rôle
+        <select [(ngModel)]="filterRole" name="filterRole" (ngModelChange)="load()">
+          <option value="">Tous</option>
+          @for (r of roles(); track r) {
+            <option [value]="r">{{ roleLabel(r) }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <div class="card table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Identifiant</th><th>Nom</th><th>Rôle</th>
+            @if (isSuperAdmin) { <th>Agence</th> }
+            <th>Statut</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of users(); track u.id) {
+            <tr>
+              <td><strong>{{ u.username }}</strong></td>
+              <td>{{ u.nomComplet }}</td>
+              <td>{{ roleLabel(u.role) }}</td>
+              @if (isSuperAdmin) {
+                <td>{{ u.agenceNom || '—' }}</td>
+              }
+              <td><span class="badge" [class]="statutClass(u.statut)">{{ u.statut }}</span></td>
+              <td class="actions">
+                <button class="btn btn-secondary btn-sm" (click)="openEdit(u)">Modifier</button>
+                @if (canDeactivate(u)) {
+                  <button class="btn btn-danger btn-sm" (click)="desactiver(u)">Retirer</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6">Aucun utilisateur</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <aside class="card permissions-panel">
+    <h3>Rôles & permissions</h3>
+    @for (r of rolePermissions(); track r.code) {
+      <div class="permission-block">
+        <h4>{{ r.label }}</h4>
+        <ul>
+          @for (p of r.permissions; track p) {
+            <li>{{ p }}</li>
+          }
+        </ul>
+      </div>
+    }
+  </aside>
+</div>
+
+@if (showForm) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>{{ editingId ? 'Modifier utilisateur' : 'Nouvel utilisateur' }}</h3>
+      <form (ngSubmit)="save()" class="form-grid">
+        @if (!editingId) {
+          <label>Identifiant *<input [(ngModel)]="form.username" name="username" required /></label>
+          <label>Mot de passe *<input [(ngModel)]="form.password" name="password" type="password" required /></label>
+        } @else {
+          <label>Nouveau mot de passe <input [(ngModel)]="form.password" name="password" type="password" placeholder="Laisser vide pour ne pas changer" /></label>
+        }
+        <label>Nom complet *<input [(ngModel)]="form.nomComplet" name="nomComplet" required /></label>
+        <label>E-mail<input [(ngModel)]="form.email" name="email" type="email" /></label>
+        <label>Téléphone<input [(ngModel)]="form.telephone" name="telephone" /></label>
+        <label>
+          Rôle *
+          <select [(ngModel)]="form.role" name="role" required>
+            @for (r of roles(); track r) {
+              <option [value]="r">{{ roleLabel(r) }}</option>
+            }
+          </select>
+        </label>
+        @if (needsAgence(form.role) && isSuperAdmin) {
+          <label>
+            Agence *
+            <select [(ngModel)]="form.agenceId" name="agenceId" required>
+              <option [ngValue]="null" disabled>Choisir</option>
+              @for (a of agences(); track a.id) {
+                <option [ngValue]="a.id">{{ a.nom }}</option>
+              }
+            </select>
+          </label>
+        }
+        @if (editingId) {
+          <label>
+            Statut
+            <select [(ngModel)]="form.statut" name="statut">
+              @for (s of statuts; track s) {
+                <option [value]="s">{{ s }}</option>
+              }
+            </select>
+          </label>
+        }
+        <div class="modal-actions full-width">
+          <button type="button" class="btn btn-secondary" (click)="closeForm()">Annuler</button>
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

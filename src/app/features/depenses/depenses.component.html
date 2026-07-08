@@ -1,0 +1,102 @@
+<div class="page-header">
+  <div>
+    <h1>Opérations</h1>
+    <p>Suivi et validation des entrées et sorties de caisse</p>
+  </div>
+  <div class="page-actions">
+    <button type="button" class="btn btn-primary" (click)="openCreate()">Ajout rapide</button>
+  </div>
+</div>
+
+@if (message()) {
+  <div class="alert alert-info">{{ message() }}</div>
+}
+
+<div class="card table-card">
+  <table>
+    <thead>
+      <tr><th>Date</th><th>Catégorie</th><th>Sens</th><th>Client</th><th>Montant</th><th>Observation</th><th>Statut</th><th></th></tr>
+    </thead>
+    <tbody>
+      @for (d of depenses(); track d.id) {
+        <tr>
+          <td>{{ d.dateDepense | date:'dd/MM/yyyy' }}</td>
+          <td>{{ d.categorie }}</td>
+          <td>
+            <span class="sens-badge" [ngClass]="sensClass(d.sens)">{{ sensLabel(d.sens) }}</span>
+          </td>
+          <td>{{ d.clientNom || '—' }}</td>
+          <td><span class="amount-cell"><span class="currency">FCFA</span> {{ formatMontant(d.montant) }}</span></td>
+          <td>{{ d.observation || '—' }}</td>
+          <td>
+            <span class="badge" [class.badge-success]="d.validee">{{ d.validee ? 'Validée' : 'En attente' }}</span>
+          </td>
+          <td>
+            @if (!d.validee) {
+              <button type="button" class="btn btn-primary btn-sm" (click)="valider(d)">Valider</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="8">Aucune opération</td></tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (showForm) {
+  <div class="modal-backdrop" (click)="showForm=false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Nouvelle opération</h3>
+      <form (ngSubmit)="save()" class="form-grid">
+        <label>Catégorie
+          <select [(ngModel)]="form.categorie" name="categorie" required (ngModelChange)="onCategoryChange()">
+            @for (c of categories(); track c.id) {
+              <option [value]="c.nom">{{ c.nom }} ({{ sensLabel(c.sens) }})</option>
+            }
+          </select>
+        </label>
+
+        @if (selectedCategory(); as cat) {
+          <div class="category-hints full-width">
+            @if (cat.necessiteMouvementCaisse ?? true) {
+              <span class="hint-badge">Mouvement caisse à la validation</span>
+            } @else {
+              <span class="hint-badge muted">Sans mouvement de caisse</span>
+            }
+            @if (cat.necessiteClient) {
+              <span class="hint-badge warn">Client obligatoire</span>
+            }
+          </div>
+        }
+
+        @if (selectedCategory()?.necessiteClient) {
+          <label class="full-width">Client
+            <select [(ngModel)]="form.clientId" name="clientId" required>
+              <option [ngValue]="undefined">— Sélectionner un client —</option>
+              @for (cl of clients(); track cl.id) {
+                <option [ngValue]="cl.id">{{ cl.nomComplet }} ({{ cl.code }})</option>
+              }
+            </select>
+          </label>
+        }
+
+        <label>Montant
+          <div class="amount-input">
+            <span class="currency">FCFA</span>
+            <input type="number" [(ngModel)]="form.montant" name="montant" required min="1" placeholder="0" />
+          </div>
+        </label>
+
+        <label class="full-width">Observation
+          <textarea [(ngModel)]="form.observation" name="observation" rows="3"></textarea>
+        </label>
+
+        <div class="modal-actions full-width">
+          <button type="button" class="btn btn-secondary" (click)="showForm=false">Annuler</button>
+          <button class="btn btn-primary" type="submit">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

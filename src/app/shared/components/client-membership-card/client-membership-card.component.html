@@ -1,0 +1,72 @@
+<article class="membership-card" #cardRoot>
+  <header class="membership-card__header">
+    <div class="membership-card__brand">
+      <span class="membership-card__brand-icon"><i class="pi pi-wallet"></i></span>
+      <div>
+        <strong>Tontine Marché</strong>
+        <span>Carte d'adhésion client</span>
+      </div>
+    </div>
+    <div class="membership-card__agence">
+      <span class="label">Agence</span>
+      <strong>{{ client.agenceNom || '—' }}</strong>
+      @if (agenceAdresse()) {
+        <span class="membership-card__contact"><i class="pi pi-map-marker"></i> {{ agenceAdresse() }}</span>
+      }
+      @if (client.agenceTelephone) {
+        <span class="membership-card__contact"><i class="pi pi-phone"></i> {{ client.agenceTelephone }}</span>
+      }
+      @if (client.agenceEmail) {
+        <span class="membership-card__contact"><i class="pi pi-envelope"></i> {{ client.agenceEmail }}</span>
+      }
+    </div>
+  </header>
+
+  <section class="membership-card__identity">
+    <div class="membership-card__photo">
+      @if (photoSrc) {
+        <img [src]="photoSrc" alt="" />
+      } @else {
+        <span class="membership-card__photo-empty"><i class="pi pi-user"></i></span>
+      }
+    </div>
+    <div class="membership-card__client">
+      <h2>{{ client.nomComplet }}</h2>
+      <dl>
+        <div><dt>Code</dt><dd>{{ client.code || '—' }}</dd></div>
+        <div><dt>Téléphone</dt><dd>{{ client.telephone || '—' }}</dd></div>
+        @if (client.marcheNom) {
+          <div><dt>Marché</dt><dd>{{ client.marcheNom }}@if (client.marcheCode) { ({{ client.marcheCode }})}</dd></div>
+        }
+        @if (client.profession) {
+          <div><dt>Profession</dt><dd>{{ client.profession }}</dd></div>
+        }
+      </dl>
+    </div>
+  </section>
+
+  <section class="membership-card__meta">
+    <div class="membership-card__agent">
+      <span class="label">Agent collecteur</span>
+      <strong>{{ client.agentNom || '—' }}</strong>
+      @if (client.agentTelephone) {
+        <span class="membership-card__contact"><i class="pi pi-phone"></i> {{ client.agentTelephone }}</span>
+      }
+    </div>
+    <div class="membership-card__cotisation">
+      <span class="label">Cotisation journalière</span>
+      <strong>{{ client.montantJournalier | fcfa }}</strong>
+    </div>
+    @if (client.dateAdhesion) {
+      <div class="membership-card__adhesion">
+        <span class="label">Date d'adhésion</span>
+        <strong>{{ client.dateAdhesion | date:'dd/MM/yyyy' }}</strong>
+      </div>
+    }
+  </section>
+
+  <footer class="membership-card__qr">
+    <app-qr-code [value]="client.code ?? ''" [size]="140" />
+    <p class="membership-card__hint">Présentez cette carte lors des collectes</p>
+  </footer>
+</article>

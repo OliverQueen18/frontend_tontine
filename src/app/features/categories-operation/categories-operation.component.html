@@ -1,0 +1,123 @@
+<div class="page-header">
+  <div>
+    <h1>Catégories d'opération</h1>
+    <p>Catalogue partagé par toutes les agences — désactivation locale par agence</p>
+  </div>
+  <button type="button" class="btn btn-primary" (click)="openCreate()">
+    <i class="pi pi-plus"></i> Nouvelle catégorie
+  </button>
+</div>
+
+@if (message()) {
+  <div class="alert alert-info">{{ message() }}</div>
+}
+
+<div class="toolbar card">
+  @if (isSuperAdmin) {
+    <label class="filter-field">
+      <span class="filter-label">Agence (statut local)</span>
+      <select [(ngModel)]="filterAgenceId" name="filterAgence" (ngModelChange)="onAgenceFilterChange()">
+        <option [ngValue]="null">Vue globale</option>
+        @for (a of agences(); track a.id) {
+          <option [ngValue]="a.id">{{ a.nom }}</option>
+        }
+      </select>
+    </label>
+  }
+  <div class="filter-field">
+    <span class="filter-label">Filtrer par sens</span>
+    <div class="filter-pills">
+      <button type="button" class="filter-pill" [class.active]="filterSens === ''" (click)="filterSens = ''">Toutes</button>
+      <button type="button" class="filter-pill" [class.active]="filterSens === 'ENTREE'" (click)="filterSens = 'ENTREE'">Entrées</button>
+      <button type="button" class="filter-pill" [class.active]="filterSens === 'SORTIE'" (click)="filterSens = 'SORTIE'">Sorties</button>
+    </div>
+  </div>
+</div>
+
+@if (isSuperAdmin && !canToggleAgenceStatus) {
+  <div class="alert alert-info">
+    Sélectionnez une agence pour activer ou désactiver une catégorie localement.
+  </div>
+}
+
+<div class="card table-card">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Catégorie</th>
+        <th>Sens</th>
+        <th>Caisse</th>
+        <th>Client</th>
+        <th>Statut</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of filteredCategories(); track c.id) {
+        <tr [class.inactive-row]="c.statut !== 'ACTIF'">
+          <td><strong>{{ c.nom }}</strong></td>
+          <td>
+            <span class="sens-badge" [ngClass]="sensClass(c.sens)">{{ sensLabel(c.sens) }}</span>
+          </td>
+          <td>{{ ouiNon(c.necessiteMouvementCaisse ?? true) }}</td>
+          <td>{{ ouiNon(c.necessiteClient) }}</td>
+          <td>
+            <span class="badge" [class.badge-success]="c.statut === 'ACTIF'">
+              {{ statutLabel(c) }}
+            </span>
+          </td>
+          <td>
+            @if (canToggleAgenceStatus) {
+              @if (c.statut === 'ACTIF') {
+                <button type="button" class="btn btn-danger btn-sm" (click)="deactivateCategory(c)">Désactiver</button>
+              } @else {
+                <button type="button" class="btn btn-primary btn-sm" (click)="reactivateCategory(c)">Réactiver</button>
+              }
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="6" class="empty-cell">Aucune catégorie.</td></tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (showForm) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <div class="modal modal-lg" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <h3>Nouvelle catégorie</h3>
+          <p class="modal-sub">Visible par toutes les agences après création</p>
+        </div>
+        <button type="button" class="btn-close" (click)="closeForm()" aria-label="Fermer">
+          <i class="pi pi-times"></i>
+        </button>
+      </header>
+      <form (ngSubmit)="saveCategory()" class="form-grid modal-body">
+        <label class="full-width">Nom
+          <input [(ngModel)]="formNom" name="formNom" required placeholder="Ex. Carburant, Remboursement…" />
+        </label>
+        <label>Sens
+          <select [(ngModel)]="formSens" name="formSens">
+            <option value="SORTIE">Sortie (décaissement)</option>
+            <option value="ENTREE">Entrée (encaissement)</option>
+          </select>
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="formNecessiteMouvementCaisse" name="formMouvement" />
+          Mouvement de caisse requis
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="formNecessiteClient" name="formClient" />
+          Client requis
+        </label>
+        <div class="modal-actions full-width">
+          <button type="button" class="btn btn-secondary" (click)="closeForm()">Annuler</button>
+          <button class="btn btn-primary" type="submit">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

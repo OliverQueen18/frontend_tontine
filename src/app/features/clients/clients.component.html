@@ -1,0 +1,447 @@
+<div class="page-header">
+  <div>
+    <h1>Clients</h1>
+    <p>Recherche, affectation et suivi des portefeuilles</p>
+  </div>
+  @if (canCreate) {
+    <button class="btn btn-primary" (click)="openCreate()">Nouveau client</button>
+  }
+</div>
+
+@if (message()) {
+  <div class="alert alert-info">{{ message() }}</div>
+}
+
+<div class="toolbar card">
+  <input [(ngModel)]="q" name="q" placeholder="Code, nom ou téléphone..." (keyup.enter)="load()" />
+  <button class="btn btn-secondary" (click)="load()">Rechercher</button>
+  @if (selectionCount() > 0) {
+    <div class="bulk-actions">
+      <span class="bulk-count">{{ selectionCount() }} sélectionné(s)</span>
+      <button type="button" class="btn btn-primary btn-sm" (click)="openCartesBulk()">
+        <i class="pi pi-id-card"></i> Générer les cartes
+      </button>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="clearSelection()">Tout décocher</button>
+    </div>
+  }
+</div>
+
+<div class="card table-card">
+  <table>
+    <thead>
+      <tr>
+        <th class="col-check">
+          <input
+            type="checkbox"
+            [checked]="allVisibleSelected()"
+            (change)="toggleSelectAll()"
+            aria-label="Tout sélectionner"
+          />
+        </th>
+        <th></th>
+        <th>Code</th><th>Nom</th><th>Téléphone</th>
+        <th>Montant/j</th><th>Solde</th><th>Commission</th><th>Jours payés</th><th>Retrait prévu</th><th>Statut</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of clients(); track c.id) {
+        <tr [class.row-selected]="isClientSelected(c)">
+          <td class="col-check">
+            <input
+              type="checkbox"
+              [checked]="isClientSelected(c)"
+              (change)="toggleSelectClient(c)"
+              [attr.aria-label]="'Sélectionner ' + c.nomComplet"
+            />
+          </td>
+          <td>
+            @if (c.photoUrl) {
+              <img [src]="previewPhoto(c.photoUrl)" alt="" class="list-avatar" />
+            } @else {
+              <span class="list-avatar list-avatar--empty"><i class="pi pi-user"></i></span>
+            }
+          </td>
+          <td><strong>{{ c.code }}</strong></td>
+          <td>{{ c.nomComplet }}</td>
+          <td>{{ c.telephone }}</td>
+          <td>{{ c.montantJournalier | fcfa }}</td>
+          <td>{{ c.soldeEpargne | fcfa }}</td>
+          <td>{{ c.commissionEstimee != null ? (c.commissionEstimee | fcfa) : '—' }}</td>
+          <td>{{ c.nombreJoursPayes ?? 0 }}</td>
+          <td>{{ c.dateProbableRetrait ? (c.dateProbableRetrait | date:'dd/MM/yyyy') : '—' }}</td>
+          <td><span class="badge" [class.badge-success]="c.statut==='ACTIF'">{{ c.statut }}</span></td>
+          <td class="actions">
+            <a class="btn btn-secondary btn-sm" [routerLink]="['/app/clients', c.id]">Ouvrir</a>
+            <button class="btn btn-secondary btn-sm" (click)="openCarte(c)" title="Carte d'adhésion">
+              <i class="pi pi-id-card"></i> Carte
+            </button>
+            @if (canManage) {
+              <button class="btn btn-secondary btn-sm" (click)="openEdit(c)">Modifier</button>
+              <button class="btn btn-secondary btn-sm" (click)="openHistorique(c)">Historique</button>
+              @if (c.statut === 'ACTIF') {
+                <button class="btn btn-secondary btn-sm" (click)="openDesactiver(c)">Désactiver</button>
+              }
+              <button
+                class="btn btn-secondary btn-sm"
+                (click)="openDelete(c)"
+                [disabled]="!canDelete(c)"
+                [title]="!canDelete(c) ? 'Solde > 0 : suppression impossible' : ''"
+              >Supprimer</button>
+            }
+            @if (auth.hasRole('SUPER_ADMIN', 'ADMIN_AGENCE')) {
+              <button class="btn btn-secondary btn-sm" (click)="openTransfer(c)">Transférer</button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (showForm) {
+  <div class="modal-backdrop client-form-backdrop" (click)="showForm=false">
+    <div class="client-form-modal" role="dialog" aria-modal="true" aria-labelledby="client-form-title" (click)="$event.stopPropagation()">
+      <header class="client-form-header">
+        <div class="client-form-header__title">
+          <span class="client-form-header__icon"><i class="pi pi-user-plus"></i></span>
+          <div>
+            <h3 id="client-form-title">Nouveau client</h3>
+            <p>Enregistrez un client et affectez-le à un agent collecteur</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" (click)="showForm=false" aria-label="Fermer">
+          <i class="pi pi-times"></i>
+        </button>
+      </header>
+
+      <form (ngSubmit)="save()" class="client-form">
+        <div class="client-form-scroll">
+          <div class="client-form-columns">
+            <section class="client-form-section client-form-section--stack">
+              <h4><i class="pi pi-map-marker"></i> Affectation</h4>
+
+              <label class="span-2 marche-field">Marché *
+                <div class="marche-row marche-row--wide">
+                  <select [(ngModel)]="form.marcheId" name="marcheId" required>
+                    <option [ngValue]="undefined" disabled>Choisir un marché</option>
+                    @for (m of marches(); track m.id) {
+                      <option [ngValue]="m.id">{{ m.nom }}@if (m.code) { ({{ m.code }})}</option>
+                    }
+                  </select>
+                  @if (isAgent || auth.hasRole('ADMIN_AGENCE')) {
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="openMarcheForm()">+ Marché</button>
+                  }
+                </div>
+              </label>
+
+              <label class="span-2">Agent collecteur *
+                <select [(ngModel)]="form.agentId" name="agentId" required [disabled]="isAgent">
+                  <option [ngValue]="undefined" disabled>Choisir un agent</option>
+                  @for (a of agents(); track a.id) {
+                    <option [ngValue]="a.id">{{ a.nomComplet }}</option>
+                  }
+                </select>
+              </label>
+
+              <h4 class="section-sub"><i class="pi pi-id-card"></i> Identité</h4>
+
+              <label class="span-2">Prénom et Nom complet *
+                <input [(ngModel)]="form.nomComplet" name="nomComplet" required />
+              </label>
+
+              <label class="span-2">Téléphone * (8 chiffres)
+                <app-phone-digits
+                  #phonePrimary
+                  [(ngModel)]="form.telephone"
+                  name="telephone"
+                  (validChange)="phoneValid = $event"
+                />
+              </label>
+
+              <label>E-mail
+                <input type="email" [(ngModel)]="form.email" name="email" placeholder="client@exemple.com" />
+              </label>
+              <label>Profession
+                <input [(ngModel)]="form.profession" name="profession" />
+              </label>
+            </section>
+
+            <section class="client-form-section">
+              <h4><i class="pi pi-address-book"></i> Compléments</h4>
+
+              <div class="photo-section span-2">
+                <span class="field-label">Photo du client</span>
+                <app-photo-capture [photoUrl]="form.photoUrl" (photoUrlChange)="onPhotoChange($event)" />
+              </div>
+              <label class="span-2">Adresse du client
+                <input [(ngModel)]="form.adresse" name="adresse" />
+              </label>
+              <label>Personne à contacter
+                <input [(ngModel)]="form.personneAContacter" name="personneAContacter" />
+              </label>
+              <label>N° tel. secondaire (8 chiffres)
+                <app-phone-digits
+                  #phoneSecondary
+                  [(ngModel)]="form.telephoneSecondaire"
+                  name="telephoneSecondaire"
+                  [required]="false"
+                  (validChange)="phoneSecondaireValid = $event"
+                />
+              </label>
+
+              <h4 class="section-sub"><i class="pi pi-wallet"></i> Adhésion</h4>
+
+              <label>Date d'adhésion
+                <input type="date" [(ngModel)]="form.dateAdhesion" name="dateAdhesion" />
+              </label>
+              <label>Montant journalier
+                <app-fcfa-amount-input
+                  [(ngModel)]="form.montantJournalier"
+                  name="montantJournalier"
+                  ariaLabel="Montant journalier en FCFA"
+                />
+              </label>
+              <label class="span-2">Frais d'adhésion (FCFA)
+                <input type="number" [(ngModel)]="form.fraisAdhesion" name="fraisAdhesion" />
+              </label>
+            </section>
+          </div>
+        </div>
+
+        <footer class="client-form-footer">
+          <button type="button" class="btn btn-secondary" (click)="showForm=false">Annuler</button>
+          <button class="btn btn-primary" type="submit">
+            <i class="pi pi-check"></i> Enregistrer
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}
+
+@if (showCreated && createdClient(); as client) {
+  <div class="modal-backdrop" (click)="closeCreated()">
+    <div class="modal carte-modal" (click)="$event.stopPropagation()">
+      <h3>Client enregistré</h3>
+      <p class="hint">Carte d'adhésion générée — imprimez-la ou remettez-la au client.</p>
+      <app-client-membership-card
+        #createdMembershipCard
+        [client]="client"
+        [photoSrc]="cartePhoto(client)"
+      />
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="printCarte(true)">
+          <i class="pi pi-print"></i> Imprimer
+        </button>
+        <a class="btn btn-secondary" [routerLink]="['/app/clients', client.id]" (click)="closeCreated()">Voir la fiche</a>
+        <button type="button" class="btn btn-primary" (click)="closeCreated()">Fermer</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCarte && carteClient(); as client) {
+  <div class="modal-backdrop" (click)="closeCarte()">
+    <div class="modal carte-modal" (click)="$event.stopPropagation()">
+      <h3>Carte client — {{ client.nomComplet }}</h3>
+      <app-client-membership-card
+        #membershipCard
+        [client]="client"
+        [photoSrc]="cartePhoto(client)"
+      />
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="printCarte()">
+          <i class="pi pi-print"></i> Imprimer
+        </button>
+        <button type="button" class="btn btn-primary" (click)="closeCarte()">Fermer</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showCartesBulk) {
+  <div class="modal-backdrop" (click)="closeCartesBulk()">
+    <div class="modal modal-lg cartes-bulk-modal" (click)="$event.stopPropagation()">
+      <h3>Cartes d'adhésion — {{ cartesBulk().length }} client(s)</h3>
+      <p class="hint">Vérifiez les cartes puis imprimez-les en une seule fois.</p>
+      <div class="cartes-bulk-grid">
+        @for (client of cartesBulk(); track client.id) {
+          <app-client-membership-card
+            [client]="client"
+            [photoSrc]="cartePhoto(client)"
+          />
+        }
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="printCartesBulk()">
+          <i class="pi pi-print"></i> Imprimer tout
+        </button>
+        <button type="button" class="btn btn-primary" (click)="closeCartesBulk()">Fermer</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showMarcheForm) {
+  <div class="modal-backdrop" (click)="showMarcheForm=false">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <h3>Nouveau marché</h3>
+      <form (ngSubmit)="saveMarche()" class="form-grid">
+        <label>Nom *
+          <input [(ngModel)]="marcheForm.nom" name="marcheNom" required />
+        </label>
+        <label>Code marché
+          <input [(ngModel)]="marcheForm.code" name="marcheCode" placeholder="Auto si vide" maxlength="30" />
+        </label>
+        <label class="full-width">Localisation (adresse) *
+          <input [(ngModel)]="marcheForm.adresse" name="marcheAdresse" required />
+        </label>
+        <label class="full-width">Description
+          <input [(ngModel)]="marcheForm.description" name="marcheDesc" />
+        </label>
+        <div class="full-width map-section">
+          <span class="field-label">Carte OpenStreetMap *</span>
+          <app-osm-map-picker
+            [mapVisible]="showMarcheForm"
+            [address]="marcheForm.adresse"
+            [(latitude)]="marcheForm.latitude"
+            [(longitude)]="marcheForm.longitude"
+            (locationPicked)="onMarcheLocationPicked($event)"
+          />
+        </div>
+        <div class="modal-actions full-width">
+          <button type="button" class="btn btn-secondary" (click)="showMarcheForm=false">Annuler</button>
+          <button class="btn btn-primary" type="submit">Ajouter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (showTransfer && selected) {
+  <div class="modal-backdrop" (click)="showTransfer=false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Transférer {{ selected.nomComplet }}</h3>
+      <form (ngSubmit)="transferer()" class="form-grid">
+        <label>Nouvel agent
+          <select [(ngModel)]="transferAgentId" name="transferAgentId" required>
+            <option [ngValue]="null" disabled>Choisir</option>
+            @for (a of agents(); track a.id) {
+              <option [ngValue]="a.id">{{ a.nomComplet }}</option>
+            }
+          </select>
+        </label>
+        <label>Motif<input [(ngModel)]="transferMotif" name="transferMotif" /></label>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="showTransfer=false">Annuler</button>
+          <button class="btn btn-primary" type="submit">Valider</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (showEdit && selected) {
+  <div class="modal-backdrop" (click)="showEdit=false">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <h3>Modifier {{ selected.nomComplet }}</h3>
+      <form (ngSubmit)="saveEdit()" class="form-grid">
+        <label class="full-width">Nom complet *
+          <input [(ngModel)]="editForm.nomComplet" name="editNom" required />
+        </label>
+        <label>Téléphone * (8 chiffres)
+          <app-phone-digits [(ngModel)]="editForm.telephone" name="editTel" [required]="true" />
+        </label>
+        <label>E-mail
+          <input type="email" [(ngModel)]="editForm.email" name="editEmail" />
+        </label>
+        <label>Profession
+          <input [(ngModel)]="editForm.profession" name="editProfession" />
+        </label>
+        <label class="full-width">Adresse
+          <input [(ngModel)]="editForm.adresse" name="editAdresse" />
+        </label>
+        <label>Personne à contacter
+          <input [(ngModel)]="editForm.personneAContacter" name="editContact" />
+        </label>
+        <label>Tél. secondaire
+          <app-phone-digits [(ngModel)]="editForm.telephoneSecondaire" name="editTel2" [required]="false" />
+        </label>
+        <label>Montant journalier
+          <app-fcfa-amount-input [(ngModel)]="editForm.montantJournalier" name="editMontant" ariaLabel="Montant journalier" />
+        </label>
+        <label>Frais d'adhésion
+          <input type="number" [(ngModel)]="editForm.fraisAdhesion" name="editFrais" />
+        </label>
+        <div class="modal-actions full-width">
+          <button type="button" class="btn btn-secondary" (click)="showEdit=false">Annuler</button>
+          <button class="btn btn-primary" type="submit">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (showDesactiver && selected) {
+  <div class="modal-backdrop" (click)="showDesactiver=false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Désactiver {{ selected.nomComplet }}</h3>
+      <p class="hint">Le client ne pourra plus recevoir de collectes.</p>
+      <label>Motif (optionnel)
+        <input [(ngModel)]="desactiverMotif" name="desactiverMotif" />
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="showDesactiver=false">Annuler</button>
+        <button type="button" class="btn btn-primary" (click)="desactiver()">Désactiver</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showDelete && selected) {
+  <div class="modal-backdrop" (click)="showDelete=false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Supprimer {{ selected.nomComplet }}</h3>
+      @if (!canDelete(selected)) {
+        <p class="alert alert-info">Impossible : le client a un solde supérieur à 0.</p>
+      } @else {
+        <p class="hint">Cette action est irréversible. L'historique est conservé.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="showDelete=false">Annuler</button>
+          <button type="button" class="btn btn-primary" (click)="supprimer()">Confirmer la suppression</button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+@if (showHistorique && selected) {
+  <div class="modal-backdrop" (click)="showHistorique=false">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <h3>Historique — {{ selected.nomComplet }}</h3>
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Action</th><th>Champ</th><th>Avant</th><th>Après</th><th>Par</th><th>Détails</th></tr>
+        </thead>
+        <tbody>
+          @for (h of historique(); track h.id) {
+            <tr>
+              <td>{{ h.dateHeure | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ historiqueLabel(h) }}</td>
+              <td>{{ h.champ || '—' }}</td>
+              <td>{{ h.valeurAvant || '—' }}</td>
+              <td>{{ h.valeurApres || '—' }}</td>
+              <td>{{ h.effectueParNom || '—' }}</td>
+              <td>{{ h.details || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7">Aucun historique</td></tr>
+          }
+        </tbody>
+      </table>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="showHistorique=false">Fermer</button>
+      </div>
+    </div>
+  </div>
+}

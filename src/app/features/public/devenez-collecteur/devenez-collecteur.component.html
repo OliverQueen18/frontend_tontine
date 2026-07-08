@@ -1,0 +1,401 @@
+<section class="collecteur-page">
+  <div class="collecteur-grid">
+    <aside class="collecteur-aside">
+      <div class="aside-header">
+        <span class="eyebrow">Rejoignez le réseau</span>
+        <h1>{{ content().title }}</h1>
+        <p>{{ content().subtitle }}</p>
+      </div>
+
+      <div class="process-steps">
+        <h2><i class="pi pi-list-check"></i> Comment ça marche</h2>
+        <ol>
+          <li>
+            <span class="step-num">1</span>
+            <div>
+              <strong>Remplissez le formulaire</strong>
+              <span>Agence, administrateur, pièce d'identité</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <div>
+              <strong>Payez les frais d'ouverture</strong>
+              <span>Orange Money ou WAVE</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <div>
+              <strong>Vérifiez votre e-mail</strong>
+              <span>Code OTP de sécurité</span>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">4</span>
+            <div>
+              <strong>Validation par notre équipe</strong>
+              <span>Réponse sous 48 h ouvrées</span>
+            </div>
+          </li>
+        </ol>
+      </div>
+
+      <div class="promo-list">
+        @for (p of content().promos; track p.title) {
+          <article class="promo-card">
+            <div class="promo-icon" [style.background]="p.bg" [style.color]="p.color">
+              <i [class]="p.icon"></i>
+            </div>
+            <div>
+              <h3>{{ p.title }}</h3>
+              <p>{{ p.text }}</p>
+            </div>
+          </article>
+        }
+      </div>
+
+      <div class="conduct-box">
+        <h2><i class="pi pi-heart"></i> Bonnes pratiques</h2>
+        <ul>
+          @for (c of content().conduct; track c.title) {
+            <li>
+              <strong>{{ c.title }}</strong>
+              <span>{{ c.text }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    </aside>
+
+    <div class="collecteur-form-panel">
+      @if (success()) {
+        <div class="success-card">
+          <div class="success-icon"><i class="pi pi-check-circle"></i></div>
+          <h2>Demande envoyée avec succès</h2>
+          <p class="success-lead">{{ message() }}</p>
+          <div class="success-timeline">
+            <div class="timeline-item done">
+              <i class="pi pi-check"></i>
+              <span>Formulaire soumis</span>
+            </div>
+            <div class="timeline-item active">
+              <i class="pi pi-clock"></i>
+              <span>Examen du dossier en cours</span>
+            </div>
+            <div class="timeline-item">
+              <i class="pi pi-envelope"></i>
+              <span>Réponse par e-mail</span>
+            </div>
+          </div>
+          <p class="hint">Conservez l'e-mail de confirmation. Notre équipe examinera votre dossier et vous contactera dès qu'une décision sera prise.</p>
+        </div>
+      } @else {
+        <div class="form-card">
+          <header class="form-header">
+            <h2>{{ content().formTitle }}</h2>
+            <p class="form-subtitle">{{ content().formSubtitle }}</p>
+          </header>
+
+          <nav class="form-steps" aria-label="Étapes du formulaire">
+            <div class="form-step" [class.done]="stepAgenceDone()">
+              <span class="form-step-icon"><i class="pi pi-building"></i></span>
+              <span class="form-step-label">Agence</span>
+            </div>
+            <div class="form-step-sep"></div>
+            <div class="form-step" [class.done]="stepAdminDone()">
+              <span class="form-step-icon"><i class="pi pi-user"></i></span>
+              <span class="form-step-label">Administrateur</span>
+            </div>
+            <div class="form-step-sep"></div>
+            <div class="form-step" [class.done]="stepDocsDone()">
+              <span class="form-step-icon"><i class="pi pi-id-card"></i></span>
+              <span class="form-step-label">Documents</span>
+            </div>
+            <div class="form-step-sep"></div>
+            <div class="form-step" [class.done]="form.accepteConditions">
+              <span class="form-step-icon"><i class="pi pi-verified"></i></span>
+              <span class="form-step-label">Validation</span>
+            </div>
+          </nav>
+
+          @if (config(); as cfg) {
+            <div class="payment-info">
+              <div class="payment-info-head">
+                <h3><i class="pi pi-wallet"></i> Frais de création d'agence</h3>
+                <p class="fee-amount">{{ cfg.fraisCreationAgence | fcfa }}</p>
+              </div>
+              <div class="payment-instructions">
+                <p>Effectuez le paiement via <strong>Orange Money</strong> ou <strong>WAVE</strong> :</p>
+                <div class="pay-phone-row">
+                  <span class="pay-phone">{{ cfg.telephonePaiementMobile || '—' }}</span>
+                  @if (cfg.telephonePaiementMobile) {
+                    <button type="button" class="btn-copy" (click)="copyPayPhone(cfg.telephonePaiementMobile)" title="Copier le numéro">
+                      <i class="pi" [class.pi-check]="phoneCopied()" [class.pi-copy]="!phoneCopied()"></i>
+                      {{ phoneCopied() ? 'Copié' : 'Copier' }}
+                    </button>
+                  }
+                </div>
+                <small>Conservez la référence de transaction — elle sera demandée à l'étape 3.</small>
+              </div>
+            </div>
+          }
+
+          @if (error()) {
+            <div class="alert alert-error" role="alert">
+              <i class="pi pi-exclamation-circle"></i>
+              {{ error() }}
+            </div>
+          }
+          @if (message()) {
+            <div class="alert alert-info" role="status">
+              <i class="pi pi-info-circle"></i>
+              {{ message() }}
+            </div>
+          }
+
+          <form (ngSubmit)="submit()" class="inscription-form" novalidate>
+            <!-- Étape 1 : Agence -->
+            <fieldset class="form-section">
+              <legend>
+                <span class="section-badge">1</span>
+                <span class="section-title">
+                  <i class="pi pi-building"></i>
+                  Votre agence
+                </span>
+              </legend>
+              <p class="section-desc">Informations de base et emplacement géographique de votre point de collecte.</p>
+
+              <label>Nom de l'agence ou de votre Tontine*
+                <input [(ngModel)]="form.agenceNom" name="agenceNom" required placeholder="Ex. Tontine Marché Bamako Centre" />
+              </label>
+
+              <label>Responsable
+                <input [(ngModel)]="form.responsable" name="responsable" placeholder="Nom du responsable" />
+              </label>
+
+              <div class="form-row">
+                <label>Téléphone agence
+                  <input [(ngModel)]="form.agenceTelephone" name="agenceTelephone" type="tel" placeholder="+223 …" />
+                </label>
+                <label>E-mail agence
+                  <input type="email" [(ngModel)]="form.agenceEmail" name="agenceEmail" placeholder="contact@…" />
+                </label>
+              </div>
+
+              <div class="form-row">
+                <label>Ville
+                  <input [(ngModel)]="form.ville" name="ville" placeholder="Ex. Bamako" />
+                </label>
+                <label>Adresse
+                  <input [(ngModel)]="form.adresse" name="adresse" placeholder="Rue, quartier, repère…" />
+                </label>
+              </div>
+
+              <div class="map-block">
+                <span class="field-label">Localisation sur la carte *</span>
+                <app-osm-map-picker
+                  [mapVisible]="true"
+                  [useCurrentLocation]="true"
+                  [address]="mapAddress"
+                  hint="La carte se centre sur votre position — modifiez l'adresse ou cliquez pour ajuster le marqueur"
+                  [(latitude)]="form.latitude"
+                  [(longitude)]="form.longitude"
+                  (locationPicked)="onLocationPicked($event)"
+                />
+              </div>
+
+              <label class="logo-field">Logo de l'agence <span class="optional">(facultatif)</span>
+                <div class="file-drop" [class.has-file]="!!logoPreview" [class.uploading]="uploading()">
+                  @if (logoPreview) {
+                    <img [src]="logoPreview" alt="Aperçu logo" class="logo-preview" />
+                  } @else {
+                    <div class="file-drop-icon"><i class="pi pi-image"></i></div>
+                  }
+                  <div class="file-drop-body">
+                    <p>Image PNG ou JPG — affiché sur les reçus clients</p>
+                    <label class="btn-file">
+                      <input type="file" accept="image/*" (change)="onLogoSelected($event)" hidden />
+                      {{ logoPreview ? 'Changer le logo' : 'Choisir un fichier' }}
+                    </label>
+                    @if (uploading()) {
+                      <small class="upload-status"><i class="pi pi-spin pi-spinner"></i> Téléversement…</small>
+                    }
+                  </div>
+                </div>
+              </label>
+            </fieldset>
+
+            <!-- Étape 2 : Administrateur -->
+            <fieldset class="form-section">
+              <legend>
+                <span class="section-badge">2</span>
+                <span class="section-title">
+                  <i class="pi pi-user"></i>
+                  Administrateur de l'agence
+                </span>
+              </legend>
+              <p class="section-desc">Compte principal pour gérer votre agence sur la plateforme.</p>
+
+              <label>Nom complet *
+                <input [(ngModel)]="form.nomComplet" name="nomComplet" required placeholder="Prénom et nom" />
+              </label>
+
+              <div class="form-row">
+                <label>Identifiant de connexion *
+                  <input [(ngModel)]="form.username" name="username" required autocomplete="username" placeholder="ex. admin.bko" />
+                </label>
+                <label>Téléphone personnel
+                  <input [(ngModel)]="form.telephone" name="telephone" type="tel" placeholder="+223 …" />
+                </label>
+              </div>
+
+              <label>E-mail personnel * <span class="field-hint">— vérification OTP requise</span>
+                <div class="otp-row">
+                  <input type="email" [(ngModel)]="form.email" name="email" required placeholder="vous@exemple.com" [readonly]="emailVerified()" />
+                  @if (!emailVerified()) {
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="envoyerOtp()" [disabled]="sendingOtp()">
+                      {{ sendingOtp() ? 'Envoi…' : 'Envoyer OTP' }}
+                    </button>
+                  }
+                </div>
+              </label>
+
+              @if (otpSent() && !emailVerified()) {
+                <label>Code OTP reçu par e-mail *
+                  <div class="otp-row">
+                    <input [(ngModel)]="otpCode" name="otpCode" maxlength="6" placeholder="6 chiffres" inputmode="numeric" autocomplete="one-time-code" />
+                    <button type="button" class="btn btn-primary btn-sm" (click)="verifierOtp()" [disabled]="verifyingOtp()">
+                      {{ verifyingOtp() ? '…' : 'Vérifier' }}
+                    </button>
+                  </div>
+                  @if (otpMasked) {
+                    <small class="otp-sent">Code envoyé à <strong>{{ otpMasked }}</strong></small>
+                  }
+                </label>
+              }
+
+              @if (emailVerified()) {
+                <p class="verified-badge"><i class="pi pi-check-circle"></i> E-mail vérifié — vous pouvez continuer</p>
+              }
+
+              <div class="form-row">
+                <label>Mot de passe *
+                  <input type="password" [(ngModel)]="form.password" name="password" required minlength="6" autocomplete="new-password" placeholder="Min. 6 caractères" />
+                </label>
+                <label>Confirmer le mot de passe *
+                  <input type="password" [(ngModel)]="form.confirmPassword" name="confirmPassword" required autocomplete="new-password" placeholder="Retapez le mot de passe" />
+                </label>
+              </div>
+              @if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
+                <p class="inline-error"><i class="pi pi-times-circle"></i> Les mots de passe ne correspondent pas</p>
+              }
+            </fieldset>
+
+            <!-- Étape 3 : Documents & paiement -->
+            <fieldset class="form-section">
+              <legend>
+                <span class="section-badge">3</span>
+                <span class="section-title">
+                  <i class="pi pi-id-card"></i>
+                  Pièce d'identité & paiement
+                </span>
+              </legend>
+              <p class="section-desc">Justificatif d'identité et preuve de paiement des frais d'ouverture.</p>
+
+              <label>Pièce d'identité * <span class="field-hint">CNI, passeport…</span>
+                <div class="file-drop file-drop--doc" [class.has-file]="!!idDocName" [class.uploading]="uploadingDoc()">
+                  <div class="file-drop-icon"><i class="pi" [class.pi-file-pdf]="idDocName" [class.pi-upload]="!idDocName"></i></div>
+                  <div class="file-drop-body">
+                    @if (idDocName) {
+                      <p class="doc-ok"><i class="pi pi-check-circle"></i> {{ idDocName }}</p>
+                    } @else {
+                      <p>PDF ou image (JPG, PNG)</p>
+                    }
+                    <label class="btn-file">
+                      <input type="file" accept="image/*,.pdf" (change)="onIdDocSelected($event)" hidden />
+                      {{ idDocName ? 'Remplacer le fichier' : 'Joindre la pièce' }}
+                    </label>
+                    @if (uploadingDoc()) {
+                      <small class="upload-status"><i class="pi pi-spin pi-spinner"></i> Téléversement…</small>
+                    }
+                  </div>
+                </div>
+              </label>
+
+              <div class="payment-methods">
+                <span class="field-label">Moyen de paiement utilisé *</span>
+                <div class="pay-options">
+                  <button type="button" class="pay-option" [class.active]="form.moyenPaiement === 'ORANGE_MONEY'" (click)="selectPayment('ORANGE_MONEY')">
+                    <span class="pay-option-icon om">OM</span>
+                    <span class="pay-option-name">Orange Money</span>
+                  </button>
+                  <button type="button" class="pay-option" [class.active]="form.moyenPaiement === 'WAVE'" (click)="selectPayment('WAVE')">
+                    <span class="pay-option-icon wave">W</span>
+                    <span class="pay-option-name">WAVE</span>
+                  </button>
+                </div>
+              </div>
+
+              <label>Référence / ID de transaction *
+                <input [(ngModel)]="form.referencePaiement" name="referencePaiement" required placeholder="Ex. OM123456789 ou référence WAVE" />
+                <small class="field-hint-block">Indiquez exactement la référence affichée après votre paiement mobile.</small>
+              </label>
+            </fieldset>
+
+            <!-- Étape 4 : Conditions -->
+            <fieldset class="form-section terms-box">
+              <legend>
+                <span class="section-badge">4</span>
+                <span class="section-title">
+                  <i class="pi pi-file-edit"></i>
+                  Conditions d'utilisation
+                </span>
+              </legend>
+              <div class="terms-text" tabindex="0">{{ conditionsText() }}</div>
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="form.accepteConditions" name="accepteConditions" />
+                <span>J'accepte les conditions d'utilisation et certifie l'exactitude des informations fournies.</span>
+              </label>
+            </fieldset>
+
+            <div class="submit-block">
+              <ul class="submit-checklist" aria-label="Prérequis">
+                <li [class.ok]="!!form.agenceNom.trim() && form.latitude != null">
+                  <i class="pi" [class.pi-check-circle]="!!form.agenceNom.trim() && form.latitude != null" [class.pi-circle]="!(form.agenceNom.trim() && form.latitude != null)"></i>
+                  Agence renseignée et localisée
+                </li>
+                <li [class.ok]="emailVerified()">
+                  <i class="pi" [class.pi-check-circle]="emailVerified()" [class.pi-circle]="!emailVerified()"></i>
+                  E-mail vérifié (OTP)
+                </li>
+                <li [class.ok]="!!form.pieceIdentiteUrl">
+                  <i class="pi" [class.pi-check-circle]="!!form.pieceIdentiteUrl" [class.pi-circle]="!form.pieceIdentiteUrl"></i>
+                  Pièce d'identité jointe
+                </li>
+                <li [class.ok]="!!form.referencePaiement.trim()">
+                  <i class="pi" [class.pi-check-circle]="!!form.referencePaiement.trim()" [class.pi-circle]="!form.referencePaiement.trim()"></i>
+                  Référence de paiement
+                </li>
+                <li [class.ok]="form.accepteConditions">
+                  <i class="pi" [class.pi-check-circle]="form.accepteConditions" [class.pi-circle]="!form.accepteConditions"></i>
+                  Conditions acceptées
+                </li>
+              </ul>
+
+              <button type="submit" class="btn btn-green btn-lg btn-block"
+                [disabled]="submitting() || uploading() || uploadingDoc() || !canSubmit()">
+                @if (submitting()) {
+                  <i class="pi pi-spin pi-spinner"></i> Soumission en cours…
+                } @else {
+                  <i class="pi pi-send"></i> Soumettre ma demande
+                }
+              </button>
+              <p class="submit-note">Votre dossier sera examiné par un administrateur avant activation.</p>
+            </div>
+          </form>
+        </div>
+      }
+    </div>
+  </div>
+</section>

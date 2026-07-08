@@ -1,0 +1,164 @@
+<div class="page-header">
+  <div>
+    <h1>{{ pageTitle }}</h1>
+    <p>Gérez les marchés et leurs localisations</p>
+  </div>
+  <button class="btn btn-primary" (click)="openCreate()">Ajouter un marché</button>
+</div>
+
+@if (message()) {
+  <div class="alert alert-info">{{ message() }}</div>
+}
+
+<div class="toolbar card filters-bar">
+  <label class="filter-field filter-field--grow">
+    <span class="filter-label">Rechercher</span>
+    <input
+      type="search"
+      [ngModel]="filterQ()"
+      (ngModelChange)="filterQ.set($event)"
+      name="filterQ"
+      placeholder="Nom, code, adresse…"
+    />
+  </label>
+  <label class="filter-field">
+    <span class="filter-label">Statut</span>
+    <select [ngModel]="filterStatut()" (ngModelChange)="filterStatut.set($event)" name="filterStatut">
+      <option value="">Tous</option>
+      <option value="ACTIF">Actif</option>
+      <option value="INACTIF">Inactif</option>
+    </select>
+  </label>
+  <div class="filter-actions">
+    <button type="button" class="btn btn-secondary btn-sm" (click)="clearFilters()">Réinitialiser</button>
+    <span class="result-count">{{ filteredMarches().length }} marché(s)</span>
+  </div>
+</div>
+
+<div class="card table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Nom</th>
+        <th>Localisation</th>
+        <th>Coordonnées</th>
+        <th>Statut</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of filteredMarches(); track m.id) {
+        <tr [class.row-inactive]="m.statut === 'INACTIF'">
+          <td><strong>{{ m.code || '—' }}</strong></td>
+          <td>{{ m.nom }}</td>
+          <td>{{ m.adresse || '—' }}</td>
+          <td><code class="coords-cell">{{ coordsLabel(m) }}</code></td>
+          <td><span class="badge" [class]="statutClass(m.statut)">{{ m.statut || 'ACTIF' }}</span></td>
+          <td class="actions">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="openDetail(m)">Détail</button>
+            @if (canEdit(m)) {
+              <button type="button" class="btn btn-secondary btn-sm" (click)="openEdit(m)">Modifier</button>
+            }
+            @if (canDeactivate() && m.statut === 'ACTIF') {
+              <button type="button" class="btn btn-danger btn-sm" (click)="desactiver(m)">Désactiver</button>
+            }
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6">
+            @if (filterQ() || filterStatut()) {
+              Aucun marché ne correspond aux filtres.
+            } @else {
+              Aucun marché. Ajoutez votre premier marché.
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (showDetail && selected) {
+  <div class="modal-backdrop" (click)="closeModals()">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <h3>{{ selected.nom }}</h3>
+      <dl class="detail-list">
+        <div><dt>Code</dt><dd><strong>{{ selected.code || '—' }}</strong></dd></div>
+        <div><dt>Statut</dt><dd><span class="badge" [class]="statutClass(selected.statut)">{{ selected.statut }}</span></dd></div>
+        @if (selected.agenceNom) {
+          <div><dt>Agence</dt><dd>{{ selected.agenceNom }}</dd></div>
+        }
+        <div><dt>Localisation</dt><dd>{{ selected.adresse || '—' }}</dd></div>
+        <div><dt>Description</dt><dd>{{ selected.description || '—' }}</dd></div>
+        <div><dt>Coordonnées</dt><dd><code>{{ coordsLabel(selected) }}</code></dd></div>
+      </dl>
+      @if (selected.latitude != null && selected.longitude != null) {
+        <div class="map-section">
+          <span class="field-label">Carte</span>
+          <app-osm-map-picker
+            [mapVisible]="showDetail"
+            [readonly]="true"
+            [latitude]="selected.latitude"
+            [longitude]="selected.longitude"
+          />
+        </div>
+      }
+      <div class="modal-actions">
+        @if (canEdit(selected)) {
+          <button type="button" class="btn btn-secondary" (click)="openEdit(selected)">Modifier</button>
+        }
+        @if (canDeactivate() && selected.statut === 'ACTIF') {
+          <button type="button" class="btn btn-danger" (click)="desactiver(selected)">Désactiver</button>
+        }
+        <button type="button" class="btn btn-primary" (click)="closeModals()">Fermer</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showForm) {
+  <div class="modal-backdrop" (click)="closeModals()">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <h3>{{ editingId ? 'Modifier le marché' : 'Nouveau marché' }}</h3>
+      <form (ngSubmit)="save()" class="form-grid">
+        <label>Nom du marché *
+          <input [(ngModel)]="form.nom" name="nom" required placeholder="Ex. Marché de Niamakoro" />
+        </label>
+        <label>Code marché
+          <input
+            [(ngModel)]="form.code"
+            name="code"
+            placeholder="Auto si vide"
+            maxlength="30"
+            [readonly]="!!editingId && auth.hasRole('AGENT')"
+          />
+        </label>
+        <label class="full-width">Localisation (adresse) *
+          <input [(ngModel)]="form.adresse" name="adresse" required placeholder="Adresse ou lieu-dit" />
+        </label>
+        <label class="full-width">Description
+          <input [(ngModel)]="form.description" name="description" placeholder="Optionnel" />
+        </label>
+        <div class="full-width map-section">
+          <span class="field-label">Emplacement sur la carte *</span>
+          <app-osm-map-picker
+            [mapVisible]="showForm"
+            [address]="form.adresse"
+            [(latitude)]="form.latitude"
+            [(longitude)]="form.longitude"
+            (locationPicked)="onLocationPicked($event)"
+          />
+        </div>
+        @if (!editingId) {
+          <p class="hint full-width">Le code est généré automatiquement si non renseigné.</p>
+        }
+        <div class="modal-actions full-width">
+          <button type="button" class="btn btn-secondary" (click)="closeModals()">Annuler</button>
+          <button class="btn btn-primary" type="submit">{{ editingId ? 'Enregistrer' : 'Créer' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

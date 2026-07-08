@@ -1,0 +1,35 @@
+.utilisateurs-layout {
+  align-items: start;
+}
+
+.permissions-panel {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+}
+
+.permission-block {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+
+  h4 {
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+    color: var(--navy-2);
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}

@@ -1,0 +1,67 @@
+<section class="grille-commission">
+  <div class="grille-header">
+    <div>
+      <h3>Grille de commission</h3>
+      <p class="hint">
+        Définissez des tranches de montant épargné et la commission fixe (FCFA) pour chaque intervalle.
+        @if (agenceNom) { — {{ agenceNom }} }
+      </p>
+    </div>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="addRow()">+ Tranche</button>
+  </div>
+
+  @if (message()) {
+    <div class="alert alert-info">{{ message() }}</div>
+  }
+
+  @if (loading()) {
+    <p>Chargement...</p>
+  } @else {
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>De (FCFA)</th>
+            <th>À (FCFA)</th>
+            <th>Commission (FCFA)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of lignes(); track $index; let i = $index) {
+            <tr>
+              <td>
+                <input type="number" min="0" [(ngModel)]="l.montantMin" [name]="'min' + i"
+                  [readonly]="i === 0" class="input-num" />
+              </td>
+              <td>
+                @if (isLastOpen(i)) {
+                  <span class="open-ended">Sans plafond</span>
+                } @else {
+                  <input type="number" min="0" [(ngModel)]="l.montantMax" [name]="'max' + i"
+                    (ngModelChange)="onMaxChange(i)" class="input-num" />
+                }
+              </td>
+              <td>
+                <input type="number" min="1" [(ngModel)]="l.montantCommission" [name]="'comm' + i" class="input-num" required />
+              </td>
+              <td>
+                @if (lignes().length > 1) {
+                  <button type="button" class="btn btn-danger btn-sm" (click)="removeRow(i)">×</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <p class="hint example">
+      Exemple : 0 – 50 000 → 2 500 FCFA ; 50 001 – 150 000 → 7 500 FCFA ; 150 001+ → 15 000 FCFA
+    </p>
+
+    <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
+      {{ saving() ? 'Enregistrement...' : 'Enregistrer la grille' }}
+    </button>
+  }
+</section>

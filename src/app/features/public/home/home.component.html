@@ -1,0 +1,266 @@
+<!-- Hero -->
+
+<section class="hero" [style.background-image]="heroBg()">
+
+  <div class="hero-overlay"></div>
+
+  <div class="container hero-inner">
+
+    <div class="hero-content">
+
+      <h1>
+
+        <span class="text-green">{{ hero().highlightGreen }}</span> {{ hero().headlineMiddle }},
+
+        <span class="text-orange">{{ hero().highlightOrange }}</span>
+
+        <span class="text-red">{{ hero().highlightRed }}</span>.
+
+      </h1>
+
+      <p>{{ hero().subtitle }}</p>
+
+      <div class="hero-actions">
+
+        <a [routerLink]="hero().ctaPrimaryRoute" class="btn btn-green btn-lg">
+
+          {{ hero().ctaPrimaryLabel }} <i class="pi pi-arrow-right"></i>
+
+        </a>
+
+        <a [routerLink]="hero().ctaSecondaryRoute" class="btn btn-outline-white btn-lg">
+
+          <i class="pi pi-play-circle"></i> {{ hero().ctaSecondaryLabel }}
+
+        </a>
+
+      </div>
+
+      <div class="hero-social-proof">
+
+        <div class="avatars">
+
+          @for (a of hero().avatars; track a) {
+
+            <span class="avatar">{{ a }}</span>
+
+          }
+
+        </div>
+
+        <p>{{ hero().socialProofPrefix }} <strong>{{ hero().socialProofCount }}</strong> {{ hero().socialProofSuffix }}</p>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="hero-visual">
+
+      <div class="hero-image-wrap">
+
+        <div class="hero-person" [style.background-image]="personBg()"></div>
+
+      </div>
+
+      <div class="transaction-card">
+
+        <div class="tx-icon"><i class="pi pi-check-circle"></i></div>
+
+        <div>
+
+          <strong>{{ hero().txTitle }}</strong>
+
+          <span class="tx-amount">{{ hero().txAmount }}</span>
+
+          <small>{{ hero().txStatus }}</small>
+
+          <small class="tx-time">{{ hero().txTime }}</small>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- Features bar -->
+
+<section class="features-bar" id="avantages">
+
+  <div class="container">
+
+    <div class="features-grid">
+
+      @for (f of features(); track f.title) {
+
+        <article class="feature-item">
+
+          <div class="feature-icon" [style.background]="f.bg" [style.color]="f.color">
+
+            <i [class]="f.icon"></i>
+
+          </div>
+
+          <div>
+
+            <h3>{{ f.title }}</h3>
+
+            <p>{{ f.desc }}</p>
+
+          </div>
+
+        </article>
+
+      }
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- About -->
+
+<section class="about-section" id="a-propos">
+
+  <div class="container about-grid">
+
+    <div class="about-content">
+
+      <span class="section-label">{{ about().label }}</span>
+
+      <h2>{{ about().title }}</h2>
+
+      <div class="color-line">
+
+        <span class="line-green"></span>
+
+        <span class="line-orange"></span>
+
+        <span class="line-red"></span>
+
+      </div>
+
+      <p>{{ about().paragraph1 }}</p>
+
+      <p>{{ about().paragraph2 }}</p>
+
+      <a [routerLink]="about().ctaRoute" class="btn btn-green">
+
+        {{ about().ctaLabel }} <i class="pi pi-arrow-right"></i>
+
+      </a>
+
+    </div>
+
+    <div class="about-visual">
+
+      <div class="about-image" [style.background-image]="aboutBg()"></div>
+
+      <div class="about-badge">
+
+        <i class="pi pi-users"></i>
+
+        <div>
+
+          <strong>{{ about().badgeCount }}</strong>
+
+          <span>{{ about().badgeLabel }}</span>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- How it works -->
+
+<section class="steps-section" id="comment-ca-marche">
+
+  <div class="container">
+
+    <div class="section-header">
+
+      <span class="section-label">{{ steps().label }}</span>
+
+      <h2>{{ steps().title }}</h2>
+
+      <div class="section-underline"></div>
+
+    </div>
+
+    <div class="steps-grid">
+
+      @for (step of steps().items; track step.num; let i = $index) {
+
+        <article class="step-card">
+
+          @if (i < steps().items.length - 1) {
+
+            <div class="step-connector"></div>
+
+          }
+
+          <div class="step-icon" [style.background]="step.bg" [style.color]="step.color">
+
+            <i [class]="step.icon"></i>
+
+          </div>
+
+          <span class="step-num">{{ step.num }}</span>
+
+          <h3>{{ step.title }}</h3>
+
+          <p>{{ step.desc }}</p>
+
+        </article>
+
+      }
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- CTA -->
+
+<section class="cta-section">
+
+  <div class="container cta-inner">
+
+    <div>
+
+      <h2>{{ cta().title }}</h2>
+
+      <p>{{ cta().subtitle }}</p>
+
+    </div>
+
+    <a [routerLink]="cta().buttonRoute" class="btn btn-white btn-lg">
+
+      {{ cta().buttonLabel }} <i class="pi pi-arrow-right"></i>
+
+    </a>
+
+  </div>
+
+</section>
+
