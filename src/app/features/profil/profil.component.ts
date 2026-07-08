@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ChangePasswordPayload, UpdateProfilePayload, UserProfile } from '../../core/models/models';
 import { PhotoCaptureComponent } from '../../shared/components/photo-capture/photo-capture.component';
@@ -21,7 +22,7 @@ export class ProfilComponent implements OnInit {
   form: UpdateProfilePayload = { nomComplet: '', email: '', telephone: '', photoUrl: '' };
   passwordForm: ChangePasswordPayload = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadProfile();
@@ -88,11 +89,15 @@ export class ProfilComponent implements OnInit {
     }
     this.loadingPassword.set(true);
     this.passwordMessage.set('');
+    const wasForced = this.auth.mustChangePassword();
     this.auth.changePassword({ currentPassword, newPassword, confirmPassword }).subscribe({
       next: res => {
         this.loadingPassword.set(false);
         this.passwordMessage.set(res.message);
         this.passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
+        if (wasForced) {
+          setTimeout(() => this.router.navigate(['/app/dashboard']), 1200);
+        }
       },
       error: e => {
         this.loadingPassword.set(false);

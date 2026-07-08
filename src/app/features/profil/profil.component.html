@@ -5,6 +5,13 @@
   </div>
 </div>
 
+@if (auth.mustChangePassword()) {
+  <div class="alert alert-error">
+    <strong>Changement de mot de passe obligatoire.</strong>
+    Pour des raisons de sécurité, vous devez définir un nouveau mot de passe avant d'accéder à l'application.
+  </div>
+}
+
 @if (profileMessage()) {
   <div class="alert" [class.alert-info]="!profileMessage().includes('Erreur') && !profileMessage().includes('Impossible')" [class.alert-error]="profileMessage().includes('Erreur') || profileMessage().includes('Impossible')">
     {{ profileMessage() }}

@@ -17,6 +17,7 @@ export class AuthService {
   readonly user = this.currentUser.asReadonly();
   readonly isAuthenticated = computed(() => !!this.currentUser()?.accessToken);
   readonly role = computed(() => this.currentUser()?.role ?? null);
+  readonly mustChangePassword = computed(() => !!this.currentUser()?.mustChangePassword);
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -97,7 +98,9 @@ export class AuthService {
   }
 
   changePassword(payload: ChangePasswordPayload): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${environment.apiUrl}/auth/change-password`, payload);
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/auth/change-password`, payload).pipe(
+      tap(() => this.patchStoredUser({ mustChangePassword: false }))
+    );
   }
 
   private patchStoredUser(partial: Partial<AuthResponse>): void {

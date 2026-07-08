@@ -115,7 +115,7 @@ export class LoginComponent {
 
         this.loading.set(false);
 
-        this.router.navigate(['/app/dashboard']);
+        this.router.navigate([this.auth.mustChangePassword() ? '/app/profil' : '/app/dashboard']);
 
       },
 

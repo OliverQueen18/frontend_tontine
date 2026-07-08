@@ -12,6 +12,7 @@ export interface AuthResponse {
   role: RoleType;
   agenceId: number | null;
   agenceNom: string | null;
+  mustChangePassword?: boolean;
 }
 
 export interface UserProfile {
