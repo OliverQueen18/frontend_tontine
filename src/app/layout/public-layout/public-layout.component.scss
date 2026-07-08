@@ -243,10 +243,13 @@
 }
 
 .footer-logo {
-  height: 56px;
+  height: 64px;
+  width: auto;
   margin-bottom: 1rem;
-  filter: brightness(0) invert(1);
-  opacity: 0.9;
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  object-fit: contain;
 }
 
 .footer-bottom {
@@ -258,13 +261,8 @@
 }
 
 @media (max-width: 1024px) {
-  .main-nav,
-  .navbar-actions,
   .mobile-menu {
     display: none;
-  }
-
-  .mobile-menu {
     position: absolute;
     top: 100%;
     left: 0;

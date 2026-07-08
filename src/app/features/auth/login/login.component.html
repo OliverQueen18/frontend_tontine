@@ -78,21 +78,25 @@
 
 
 
-      <div class="demo-accounts">
+      @if (isDev) {
 
-        <strong>Comptes de démonstration</strong>
+        <div class="demo-accounts">
 
-        <ul>
+          <strong>Comptes de démonstration</strong>
 
-          <li>admin / admin123 (Super Admin)</li>
+          <ul>
 
-          <li>admin.bko / admin123 (Admin agence)</li>
+            <li>admin / admin123 (Super Admin)</li>
 
-          <li>agent001 / agent123 (Agent)</li>
+            <li>admin.bko / admin123 (Admin agence)</li>
 
-        </ul>
+            <li>agent001 / agent123 (Agent)</li>
 
-      </div>
+          </ul>
+
+        </div>
+
+      }
 
     } @else {
 

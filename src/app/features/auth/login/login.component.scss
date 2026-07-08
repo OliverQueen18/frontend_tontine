@@ -49,6 +49,8 @@ form, .forgot-form {
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
+  white-space: nowrap;
+  flex: 1 0 auto;
 }
 
 .link-btn {

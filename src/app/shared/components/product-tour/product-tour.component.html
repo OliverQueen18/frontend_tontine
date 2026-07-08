@@ -1,0 +1,50 @@
+@if (tour.active()) {
+  <div class="tour-overlay">
+    @if (spotlightStyle(); as sp) {
+      <div class="tour-spotlight" [ngStyle]="sp"></div>
+    } @else {
+      <div class="tour-dim"></div>
+    }
+
+    @if (tour.current(); as step) {
+      <div class="tour-tooltip" [ngStyle]="tooltipStyle()">
+        <div class="tour-tooltip__head">
+          @if (step.icon) {
+            <span class="tour-tooltip__icon"><i [class]="step.icon"></i></span>
+          }
+          <h3>{{ step.title }}</h3>
+          <button type="button" class="tour-close" (click)="tour.skip()" aria-label="Fermer">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <p class="tour-tooltip__text">{{ step.text }}</p>
+
+        <div class="tour-progress">
+          @for (s of tour.steps(); track $index) {
+            <button
+              type="button"
+              class="tour-dot"
+              [class.active]="$index === tour.index()"
+              (click)="tour.goTo($index)"
+              [attr.aria-label]="'Étape ' + ($index + 1)"
+            ></button>
+          }
+        </div>
+
+        <div class="tour-actions">
+          <button type="button" class="tour-skip" (click)="tour.skip()">Passer</button>
+          <div class="tour-nav">
+            <span class="tour-count">{{ tour.index() + 1 }} / {{ tour.total() }}</span>
+            @if (!tour.isFirst()) {
+              <button type="button" class="btn-tour btn-tour--ghost" (click)="tour.prev()">Précédent</button>
+            }
+            <button type="button" class="btn-tour btn-tour--primary" (click)="tour.next()">
+              {{ tour.isLast() ? 'Terminer' : 'Suivant' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}

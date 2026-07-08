@@ -1,9 +1,11 @@
-import { Component, OnInit, computed } from '@angular/core';
+import { AfterViewInit, Component, OnInit, computed, inject } from '@angular/core';
 
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { SiteContentService } from '../../core/services/site-content.service';
+import { TourService } from '../../core/services/tour.service';
 import { ChatAssistantComponent } from '../../shared/components/chat-assistant/chat-assistant.component';
+import { ProductTourComponent } from '../../shared/components/product-tour/product-tour.component';
 
 
 
@@ -13,7 +15,7 @@ import { ChatAssistantComponent } from '../../shared/components/chat-assistant/c
 
   standalone: true,
 
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ChatAssistantComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ChatAssistantComponent, ProductTourComponent],
 
   templateUrl: './public-layout.component.html',
 
@@ -21,11 +23,13 @@ import { ChatAssistantComponent } from '../../shared/components/chat-assistant/c
 
 })
 
-export class PublicLayoutComponent implements OnInit {
+export class PublicLayoutComponent implements OnInit, AfterViewInit {
 
   menuOpen = false;
 
   readonly layout = computed(() => this.cms.section('layout'));
+
+  private readonly tour = inject(TourService);
 
 
 
@@ -36,6 +40,16 @@ export class PublicLayoutComponent implements OnInit {
   ngOnInit(): void {
 
     this.cms.load().subscribe();
+
+  }
+
+
+
+  ngAfterViewInit(): void {
+
+    if (!this.tour.hasSeen('public')) {
+      setTimeout(() => this.tour.start('public'), 900);
+    }
 
   }
 

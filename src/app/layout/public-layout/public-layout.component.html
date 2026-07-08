@@ -17,7 +17,7 @@
 
   <header class="main-navbar">
     <div class="container navbar-inner">
-      <a routerLink="/" class="brand" (click)="menuOpen=false">
+      <a routerLink="/" class="brand" data-tour="public-brand" (click)="menuOpen=false">
         <img [src]="iconUrl()" alt="" class="brand-icon" />
         <div class="brand-text">
           <strong>{{ layout().brandName }}</strong>
@@ -34,7 +34,7 @@
       }
 
       <div class="mobile-menu" [class.open]="menuOpen">
-        <nav class="main-nav">
+        <nav class="main-nav" data-tour="public-nav">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" (click)="menuOpen=false">Accueil</a>
           <a routerLink="/" fragment="a-propos" (click)="menuOpen=false">À propos</a>
           <a routerLink="/fonctionnalites" routerLinkActive="active" (click)="menuOpen=false">Fonctionnalités</a>
@@ -43,10 +43,10 @@
           <a routerLink="/contact" routerLinkActive="active" (click)="menuOpen=false">Contact</a>
         </nav>
         <div class="navbar-actions">
-          <a routerLink="/connexion" class="btn btn-outline" (click)="menuOpen=false">
+          <a routerLink="/connexion" class="btn btn-outline" data-tour="public-login" (click)="menuOpen=false">
             <i class="pi pi-user"></i> {{ layout().loginButtonLabel }}
           </a>
-          <a [routerLink]="collecteurRoute()" class="btn btn-green" (click)="menuOpen=false">
+          <a [routerLink]="collecteurRoute()" class="btn btn-green" data-tour="public-collecteur" (click)="menuOpen=false">
             <i class="pi pi-user-plus"></i> {{ layout().contactButtonLabel }}
           </a>
         </div>
@@ -84,4 +84,5 @@
   </footer>
 
   <app-chat-assistant context="public" />
+  <app-product-tour />
 </div>

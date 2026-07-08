@@ -1,10 +1,12 @@
-import { Component, computed, HostListener, OnInit, inject } from '@angular/core';
+import { AfterViewInit, Component, computed, HostListener, OnInit, inject } from '@angular/core';
 
 import { Router, RouterLink, RouterLinkActive, RouterOutlet, NavigationEnd } from '@angular/router';
 
 import { AuthService } from '../../core/services/auth.service';
 import { DemandeInscriptionBadgeService } from '../../core/services/demande-inscription-badge.service';
+import { TourService } from '../../core/services/tour.service';
 import { ChatAssistantComponent } from '../../shared/components/chat-assistant/chat-assistant.component';
+import { ProductTourComponent } from '../../shared/components/product-tour/product-tour.component';
 
 import { NgClass } from '@angular/common';
 
@@ -32,7 +34,7 @@ interface NavItem {
 
   standalone: true,
 
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, ChatAssistantComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, ChatAssistantComponent, ProductTourComponent],
 
   templateUrl: './app-layout.component.html',
 
@@ -40,13 +42,15 @@ interface NavItem {
 
 })
 
-export class AppLayoutComponent implements OnInit {
+export class AppLayoutComponent implements OnInit, AfterViewInit {
 
   sidebarOpen = false;
 
   isMobile = false;
 
   readonly inscriptionBadge = inject(DemandeInscriptionBadgeService);
+
+  readonly tour = inject(TourService);
 
   private readonly router = inject(Router);
 
@@ -110,6 +114,10 @@ export class AppLayoutComponent implements OnInit {
     this.auth.logout();
   }
 
+  startTour(): void {
+    this.tour.start('app');
+  }
+
   ngOnInit(): void {
 
     this.updateViewport();
@@ -119,6 +127,14 @@ export class AppLayoutComponent implements OnInit {
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
       this.inscriptionBadge.refresh();
     });
+
+  }
+
+  ngAfterViewInit(): void {
+
+    if (!this.tour.hasSeen('app')) {
+      setTimeout(() => this.tour.start('app'), 700);
+    }
 
   }
 

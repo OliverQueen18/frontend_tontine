@@ -8,7 +8,7 @@
 
 
 
-  <aside class="sidebar">
+  <aside class="sidebar" data-tour="sidebar">
 
     <div class="sidebar-brand">
 
@@ -28,7 +28,7 @@
 
       @for (item of menu(); track item.route) {
 
-        <a [routerLink]="item.route" routerLinkActive="active" (click)="closeSidebar()">
+        <a [routerLink]="item.route" routerLinkActive="active" [attr.data-tour]="item.route" (click)="closeSidebar()">
 
           <i [class]="item.icon"></i>
 
@@ -60,7 +60,7 @@
 
     <header class="topbar">
 
-      <button type="button" class="icon-btn" (click)="toggleSidebar()" aria-label="Menu">
+      <button type="button" class="icon-btn" data-tour="topbar-toggle" (click)="toggleSidebar()" aria-label="Menu">
 
         <i class="pi pi-bars"></i>
 
@@ -68,9 +68,15 @@
 
       <div class="topbar-title">Tableau de bord</div>
 
+      <button type="button" class="icon-btn topbar-help" data-tour="tour-help" (click)="startTour()" aria-label="Didacticiel" title="Lancer le didacticiel">
+
+        <i class="pi pi-question-circle"></i>
+
+      </button>
+
       <div class="topbar-user">
 
-        <a class="user-meta user-meta--link" routerLink="/app/profil" (click)="closeSidebar()">
+        <a class="user-meta user-meta--link" data-tour="topbar-user" routerLink="/app/profil" (click)="closeSidebar()">
 
           <strong>{{ auth.user()?.nomComplet }}</strong>
 
@@ -99,5 +105,6 @@
   </div>
 
   <app-chat-assistant context="app" />
+  <app-product-tour />
 </div>
 

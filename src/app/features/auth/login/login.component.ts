@@ -53,6 +53,8 @@ export class LoginComponent {
 
   version = environment.appVersion;
 
+  isDev = !environment.production;
+
 
 
   forgotUsername = '';
