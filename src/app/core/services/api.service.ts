@@ -1,17 +1,21 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, from, map, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Agence, Agent, AppUser, AuditLog, Caisse, CategorieDepense, Client, ClientHistorique, Collecte, Dashboard, DemandeInscriptionAgence,
   Depense, GrilleCommissionLigne, InscriptionCollecteurConfig, Marche, PlatformSettings, Restitution, RolePermission, RoleType, SensOperation
 } from '../models/models';
+import { ImageCompressService } from './image-compress.service';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly base = environment.apiUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private imageCompress: ImageCompressService
+  ) {}
 
   // Public
   publicStats() {
@@ -21,15 +25,26 @@ export class ApiService {
   }
 
   uploadPublicMedia(file: File): Observable<{ url: string }> {
-    const form = new FormData();
-    form.append('file', file);
-    return this.http.post<{ url: string }>(`${this.base}/public/media/upload`, form);
+    return from(this.imageCompress.compress(file)).pipe(
+      switchMap(compressed => {
+        const form = new FormData();
+        form.append('file', compressed, compressed.name);
+        return this.http.post<{ url: string }>(`${this.base}/public/media/upload`, form);
+      })
+    );
   }
 
   uploadPublicDocument(file: File): Observable<{ url: string }> {
-    const form = new FormData();
-    form.append('file', file);
-    return this.http.post<{ url: string }>(`${this.base}/public/media/upload-document`, form);
+    const prepare$ = file.type.startsWith('image/')
+      ? from(this.imageCompress.compress(file))
+      : from(Promise.resolve(file));
+    return prepare$.pipe(
+      switchMap(prepared => {
+        const form = new FormData();
+        form.append('file', prepared, prepared.name);
+        return this.http.post<{ url: string }>(`${this.base}/public/media/upload-document`, form);
+      })
+    );
   }
 
   getInscriptionCollecteurConfig(): Observable<InscriptionCollecteurConfig> {

@@ -1,19 +1,23 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, catchError, from, map, of, switchMap, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   DEFAULT_SITE_CONTENT,
   SiteContentMap,
   SiteSectionDto,
 } from '../models/site-content.model';
+import { ImageCompressService } from './image-compress.service';
 
 @Injectable({ providedIn: 'root' })
 export class SiteContentService {
   private readonly cache = signal<SiteContentMap | null>(null);
   readonly content = computed(() => this.cache() ?? DEFAULT_SITE_CONTENT);
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private imageCompress: ImageCompressService
+  ) {}
 
   load(): Observable<SiteContentMap> {
     return this.http.get<Partial<SiteContentMap>>(`${environment.apiUrl}/public/content`).pipe(
@@ -53,9 +57,13 @@ export class SiteContentService {
   }
 
   uploadMedia(file: File): Observable<{ url: string }> {
-    const form = new FormData();
-    form.append('file', file);
-    return this.http.post<{ url: string }>(`${environment.apiUrl}/admin/media/upload`, form);
+    return from(this.imageCompress.compress(file)).pipe(
+      switchMap(compressed => {
+        const form = new FormData();
+        form.append('file', compressed, compressed.name);
+        return this.http.post<{ url: string }>(`${environment.apiUrl}/admin/media/upload`, form);
+      })
+    );
   }
 
   invalidateCache(): void {

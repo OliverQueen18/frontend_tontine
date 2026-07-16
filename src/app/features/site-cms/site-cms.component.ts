@@ -110,7 +110,11 @@ export class SiteCmsComponent implements OnInit {
         this.applyImageUrl(field, res.url);
         this.message.set('Image téléversée — pensez à enregistrer la section');
       },
-      error: err => this.error.set(err?.error?.message || 'Erreur upload'),
+      error: err => this.error.set(
+        err?.status === 413
+          ? 'Image trop volumineuse même après compression. Choisissez une image plus légère.'
+          : (err?.error?.message || 'Erreur upload')
+      ),
     });
     input.value = '';
   }
