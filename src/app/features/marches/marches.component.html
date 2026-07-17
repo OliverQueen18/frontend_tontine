@@ -60,8 +60,14 @@
             @if (canEdit(m)) {
               <button type="button" class="btn btn-secondary btn-sm" (click)="openEdit(m)">Modifier</button>
             }
-            @if (canDeactivate() && m.statut === 'ACTIF') {
-              <button type="button" class="btn btn-danger btn-sm" (click)="desactiver(m)">Désactiver</button>
+            @if (canSoftDelete() && m.statut === 'ACTIF') {
+              <button type="button" class="btn btn-danger btn-sm" (click)="desactiver(m)" title="Suppression logique">Supprimer</button>
+            }
+            @if (canSoftDelete() && m.statut === 'INACTIF') {
+              <button type="button" class="btn btn-secondary btn-sm" (click)="reactiver(m)">Réactiver</button>
+            }
+            @if (canHardDelete()) {
+              <button type="button" class="btn btn-danger btn-sm" (click)="supprimerDefinitivement(m)" title="Suppression définitive">Suppr. définitive</button>
             }
           </td>
         </tr>
@@ -109,8 +115,14 @@
         @if (canEdit(selected)) {
           <button type="button" class="btn btn-secondary" (click)="openEdit(selected)">Modifier</button>
         }
-        @if (canDeactivate() && selected.statut === 'ACTIF') {
-          <button type="button" class="btn btn-danger" (click)="desactiver(selected)">Désactiver</button>
+        @if (canSoftDelete() && selected.statut === 'ACTIF') {
+          <button type="button" class="btn btn-danger" (click)="desactiver(selected)">Supprimer</button>
+        }
+        @if (canSoftDelete() && selected.statut === 'INACTIF') {
+          <button type="button" class="btn btn-secondary" (click)="reactiver(selected)">Réactiver</button>
+        }
+        @if (canHardDelete()) {
+          <button type="button" class="btn btn-danger" (click)="supprimerDefinitivement(selected)">Supprimer définitivement</button>
         }
         <button type="button" class="btn btn-primary" (click)="closeModals()">Fermer</button>
       </div>

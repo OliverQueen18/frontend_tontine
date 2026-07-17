@@ -144,12 +144,41 @@ export class MarchesComponent implements OnInit {
   }
 
   desactiver(m: Marche): void {
-    if (!m.id || !this.canDeactivate() || m.statut !== 'ACTIF') return;
-    if (!confirm(`Désactiver le marché « ${m.nom} » ?`)) return;
+    if (!m.id || !this.canSoftDelete() || m.statut !== 'ACTIF') return;
+    if (!confirm(`Supprimer le marché « ${m.nom} » ?\nIl sera désactivé (suppression logique) et restera visible comme inactif.`)) return;
     this.api.desactiverMarche(m.id).subscribe({
       next: () => {
         this.closeModals();
-        this.message.set('Marché désactivé');
+        this.message.set('Marché désactivé (suppression logique)');
+        this.load();
+      },
+      error: e => this.message.set(e?.error?.message || 'Erreur')
+    });
+  }
+
+  reactiver(m: Marche): void {
+    if (!m.id || !this.canSoftDelete() || m.statut === 'ACTIF') return;
+    if (!confirm(`Réactiver le marché « ${m.nom} » ?`)) return;
+    this.api.reactiverMarche(m.id).subscribe({
+      next: () => {
+        this.closeModals();
+        this.message.set('Marché réactivé');
+        this.load();
+      },
+      error: e => this.message.set(e?.error?.message || 'Erreur')
+    });
+  }
+
+  supprimerDefinitivement(m: Marche): void {
+    if (!m.id || !this.canHardDelete()) return;
+    if (!confirm(
+      `Supprimer DÉFINITIVEMENT le marché « ${m.nom} » ?\n` +
+      `Cette action est irréversible. Impossible s'il reste des clients rattachés.`
+    )) return;
+    this.api.deleteMarche(m.id).subscribe({
+      next: res => {
+        this.closeModals();
+        this.message.set(res.message || 'Marché supprimé définitivement');
         this.load();
       },
       error: e => this.message.set(e?.error?.message || 'Erreur')
@@ -157,11 +186,17 @@ export class MarchesComponent implements OnInit {
   }
 
   canEdit(m: Marche): boolean {
-    return m.statut === 'ACTIF';
+    return m.statut === 'ACTIF' && this.isAdmin;
   }
 
-  canDeactivate(): boolean {
+  /** Suppression logique (INACTIF) — admin agence ou super admin. */
+  canSoftDelete(): boolean {
     return this.isAdmin;
+  }
+
+  /** Suppression physique — super admin uniquement. */
+  canHardDelete(): boolean {
+    return this.auth.hasRole('SUPER_ADMIN');
   }
 
   coordsLabel(m: Marche): string {

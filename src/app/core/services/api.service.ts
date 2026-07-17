@@ -349,6 +349,15 @@ export class ApiService {
     return this.http.patch<Marche>(`${this.base}/referentiels/marches/${id}/desactiver`, {});
   }
 
+  reactiverMarche(id: number) {
+    return this.http.patch<Marche>(`${this.base}/referentiels/marches/${id}/reactiver`, {});
+  }
+
+  /** Suppression définitive — SUPER_ADMIN uniquement. */
+  deleteMarche(id: number) {
+    return this.http.delete<{ message: string }>(`${this.base}/referentiels/marches/${id}`);
+  }
+
   getQuartiers(agenceId?: number | null) {
     let params = new HttpParams();
     if (agenceId) params = params.set('agenceId', agenceId);
