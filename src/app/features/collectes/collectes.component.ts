@@ -31,6 +31,8 @@ export class CollectesComponent implements OnInit {
   showCollecteForm = false;
   showSignature = false;
   showQrScanner = false;
+  /** Collecte historique en cours de signature (null = nouvelle collecte). */
+  signingExisting: Collecte | null = null;
   message = signal('');
   mode: 'assistant' | 'historique' = 'assistant';
 
@@ -50,11 +52,23 @@ export class CollectesComponent implements OnInit {
 
   constructor(private api: ApiService, public auth: AuthService, private cms: SiteContentService) {}
 
+  /** Admin agence / super admin : voir toutes les collectes et filtrer par agent. */
+  get canFilterAgents(): boolean {
+    return this.auth.hasRole('SUPER_ADMIN', 'ADMIN_AGENCE');
+  }
+
   ngOnInit(): void {
+    if (this.canFilterAgents) {
+      this.mode = 'historique';
+    }
     const agenceId = this.auth.hasRole('SUPER_ADMIN') ? null : this.auth.agenceId();
     this.api.getAgents(agenceId).subscribe(agents => {
       this.agents.set(agents);
-      if (this.auth.isCollecteur()) {
+      if (this.canFilterAgents) {
+        // Toutes les collectes par défaut ; l'admin peut ensuite filtrer par agent
+        this.agentId = null;
+        this.loadHistorique();
+      } else if (this.auth.hasRole('AGENT')) {
         const userId = this.auth.user()?.id;
         const username = this.auth.user()?.username;
         const me = agents.find(a =>
@@ -63,28 +77,41 @@ export class CollectesComponent implements OnInit {
         if (me?.id) {
           this.agentId = me.id;
           this.loadPortefeuille();
+          this.loadHistorique();
         }
-      } else if (agents.length) {
-        this.agentId = agents[0].id!;
-        this.loadPortefeuille();
       }
     });
     this.loadHistorique();
   }
 
+  onAgentFilterChange(): void {
+    this.loadPortefeuille();
+    this.loadHistorique();
+  }
+
   loadPortefeuille(): void {
-    if (!this.agentId) return;
+    if (!this.agentId) {
+      this.portefeuille.set([]);
+      return;
+    }
     this.api.portefeuille(this.agentId).subscribe(p => this.portefeuille.set(p));
   }
 
   loadHistorique(): void {
     const agenceId = this.auth.hasRole('SUPER_ADMIN') ? null : this.auth.agenceId();
-    this.api.getCollectes({ agenceId, agentId: this.agentId }).subscribe(h => this.historique.set(h));
+    this.api.getCollectes({
+      agenceId,
+      agentId: this.agentId ?? undefined
+    }).subscribe(h => this.historique.set(h));
   }
 
   clearFilters(): void {
     this.filterQ.set('');
     this.sortBy.set('nom');
+    if (this.canFilterAgents) {
+      this.agentId = null;
+      this.onAgentFilterChange();
+    }
   }
 
   isSelected(item: Collecte): boolean {
@@ -199,7 +226,49 @@ export class CollectesComponent implements OnInit {
   cancelCollecte(): void {
     this.showCollecteForm = false;
     this.showSignature = false;
+    this.signingExisting = null;
     this.selected = null;
+  }
+
+  cancelSignature(): void {
+    this.showSignature = false;
+    if (this.signingExisting) {
+      this.signingExisting = null;
+      this.selected = null;
+    } else {
+      this.showCollecteForm = true;
+    }
+  }
+
+  needsSignature(c: Collecte): boolean {
+    return !c.annulee && !(c.signatureClient && c.signatureClient.trim());
+  }
+
+  ouvrirSignatureHistorique(c: Collecte): void {
+    if (!c.id || !this.needsSignature(c)) return;
+    this.signingExisting = c;
+    this.selected = c;
+    this.montantRecu = c.montantRecu ?? 0;
+    this.nombreJours = c.nombreJoursPayes ?? 1;
+    this.showCollecteForm = false;
+    this.showSignature = true;
+  }
+
+  annulerHistorique(c: Collecte): void {
+    if (!c.id || c.annulee) return;
+    const ok = confirm(
+      `Annuler la collecte ${c.numeroRecu} (${c.montantRecu} FCFA) pour ${c.clientNom} ?\n` +
+      `Le montant sera retiré du solde du client.`
+    );
+    if (!ok) return;
+    this.api.annulerCollecte(c.id).subscribe({
+      next: () => {
+        this.message.set(`Collecte ${c.numeroRecu} annulée`);
+        this.loadPortefeuille();
+        this.loadHistorique();
+      },
+      error: err => this.message.set(err?.error?.message || 'Erreur lors de l\'annulation')
+    });
   }
 
   photoSrc(url?: string): string {
@@ -209,6 +278,21 @@ export class CollectesComponent implements OnInit {
 
   onSigned(signature: string): void {
     if (!this.selected) return;
+
+    if (this.signingExisting?.id) {
+      this.api.signerCollecte(this.signingExisting.id, signature).subscribe({
+        next: (c) => {
+          this.showSignature = false;
+          this.signingExisting = null;
+          this.selected = null;
+          this.message.set(`Signature enregistrée — reçu ${c.numeroRecu}`);
+          this.loadHistorique();
+        },
+        error: err => this.message.set(err?.error?.message || 'Erreur lors de la signature')
+      });
+      return;
+    }
+
     this.api.enregistrerCollecte({
       clientId: this.selected.clientId,
       agentId: this.agentId || undefined,

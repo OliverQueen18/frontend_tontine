@@ -18,6 +18,7 @@ export class GrilleCommissionEditorComponent implements OnChanges {
   lignes = signal<GrilleCommissionLigne[]>([]);
   loading = signal(false);
   saving = signal(false);
+  resetting = signal(false);
   message = signal('');
 
   constructor(private api: ApiService) {}
@@ -92,6 +93,28 @@ export class GrilleCommissionEditorComponent implements OnChanges {
       error: (e: { error?: { message?: string } }) => {
         this.saving.set(false);
         this.message.set(e?.error?.message || 'Erreur enregistrement');
+      }
+    });
+  }
+
+  resetToDefault(): void {
+    const ok = confirm(
+      'Réinitialiser la grille avec les tranches par défaut ?\nLes modifications actuelles seront remplacées.'
+    );
+    if (!ok) return;
+
+    this.resetting.set(true);
+    this.message.set('');
+    this.api.resetGrilleCommission(this.agenceId).subscribe({
+      next: (rows: GrilleCommissionLigne[]) => {
+        this.lignes.set(rows);
+        this.resetting.set(false);
+        this.message.set('Grille réinitialisée avec les valeurs par défaut');
+        this.saved.emit();
+      },
+      error: (e: { error?: { message?: string } }) => {
+        this.resetting.set(false);
+        this.message.set(e?.error?.message || 'Impossible de réinitialiser la grille');
       }
     });
   }

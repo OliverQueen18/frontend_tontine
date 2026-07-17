@@ -1,0 +1,162 @@
+<div class="page-header">
+  <div>
+    <h1>Simulateur</h1>
+    <p>
+      Estime le bénéfice agence et la commission administrateur sur une période,
+      à partir des mises journalières des clients actifs.
+    </p>
+  </div>
+</div>
+
+<div class="toolbar card">
+  <label>
+    Du
+    <input type="date" [(ngModel)]="debut" name="debut" />
+  </label>
+  <label>
+    Au
+    <input type="date" [(ngModel)]="fin" name="fin" />
+  </label>
+  @if (isSuperAdmin()) {
+    <label>
+      Agence
+      <select [(ngModel)]="filterAgenceId" name="agence">
+        <option [ngValue]="null">Toutes</option>
+        @for (a of agences(); track a.id) {
+          <option [ngValue]="a.id">{{ a.nom }}</option>
+        }
+      </select>
+    </label>
+  }
+  <button type="button" class="btn btn-primary" (click)="simuler()" [disabled]="loading()">
+    {{ loading() ? 'Calcul...' : 'Simuler' }}
+  </button>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+}
+
+@if (result(); as r) {
+  <div class="sim-meta card">
+    <div>
+      <span class="label">Période</span>
+      <strong>{{ r.debut | date: 'dd/MM/yyyy' }} → {{ r.fin | date: 'dd/MM/yyyy' }}</strong>
+    </div>
+    <div>
+      <span class="label">Jours simulés</span>
+      <strong>{{ r.nombreJours }}</strong>
+    </div>
+    <div>
+      <span class="label">Périmètre</span>
+      <strong>{{ r.agenceNom || '—' }}</strong>
+    </div>
+    <div>
+      <span class="label">Taux commission admin</span>
+      <strong>{{ tauxAdminPercent(r.tauxCommissionAdmin) }}</strong>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi">
+      <span>Clients actifs</span>
+      <strong>{{ r.nombreClients }}</strong>
+    </div>
+    <div class="kpi">
+      <span>Mises journalières (total)</span>
+      <strong>{{ r.totalMisesJournalieres | fcfa }}</strong>
+    </div>
+    <div class="kpi">
+      <span>Collectes simulées</span>
+      <strong>{{ r.totalCollectesSimulees | fcfa }}</strong>
+    </div>
+    <div class="kpi success">
+      <span>Bénéfice agence</span>
+      <strong>{{ r.beneficeAgence | fcfa }}</strong>
+    </div>
+    <div class="kpi warn">
+      <span>Commission administrateur</span>
+      <strong>{{ r.commissionAdmin | fcfa }}</strong>
+    </div>
+  </div>
+
+  <p class="hint">
+    Hypothèse : chaque client actif paie sa mise chaque jour de la période
+    (collecte = mise × {{ r.nombreJours }} j). Le bénéfice agence est la somme des
+    commissions grille (ou taux) calculées selon la mise journalière de chaque client.
+    La commission admin = collectes simulées × taux commission admin.
+  </p>
+
+  @if (r.parAgence.length > 1) {
+    <section class="card table-card">
+      <h2>Répartition par agence</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Agence</th>
+              <th>Clients</th>
+              <th>Collectes simulées</th>
+              <th>Bénéfice agence</th>
+              <th>Commission admin</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of r.parAgence; track a.agenceId) {
+              <tr>
+                <td>{{ a.agenceNom }}</td>
+                <td>{{ a.nombreClients }}</td>
+                <td>{{ a.totalCollectesSimulees | fcfa }}</td>
+                <td>{{ a.beneficeAgence | fcfa }}</td>
+                <td>{{ a.commissionAdmin | fcfa }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <section class="card table-card">
+    <h2>Détail par client</h2>
+    @if (!r.clients.length) {
+      <p class="empty">Aucun client actif sur ce périmètre.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Client</th>
+              @if (isSuperAdmin() && !filterAgenceId) {
+                <th>Agence</th>
+              }
+              <th>Mise / jour</th>
+              <th>Collecte simulée</th>
+              <th>Commission agence</th>
+              <th>Tranche</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of r.clients; track c.clientId) {
+              <tr>
+                <td>
+                  <div class="client-cell">
+                    <strong>{{ c.clientNom }}</strong>
+                    <span>{{ c.clientCode }}</span>
+                  </div>
+                </td>
+                @if (isSuperAdmin() && !filterAgenceId) {
+                  <td>{{ c.agenceNom }}</td>
+                }
+                <td>{{ c.montantJournalier | fcfa }}</td>
+                <td>{{ c.collecteSimulee | fcfa }}</td>
+                <td>{{ c.commissionAgence | fcfa }}</td>
+                <td class="muted">{{ c.trancheLabel }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

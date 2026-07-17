@@ -88,6 +88,8 @@ export class AppLayoutComponent implements OnInit, AfterViewInit {
 
     { label: 'Rapports', icon: 'pi pi-chart-bar', route: '/app/rapports' },
 
+    { label: 'Simulateur', icon: 'pi pi-calculator', route: '/app/simulateur', roles: ['SUPER_ADMIN', 'ADMIN_AGENCE'] },
+
     { label: 'Audit', icon: 'pi pi-history', route: '/app/audit', roles: ['SUPER_ADMIN', 'ADMIN_AGENCE', 'AUDITEUR'] },
 
     { label: 'Mon profil', icon: 'pi pi-user', route: '/app/profil' },

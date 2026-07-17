@@ -4,7 +4,8 @@ import { Observable, from, map, switchMap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Agence, Agent, AppUser, AuditLog, Caisse, CategorieDepense, Client, ClientHistorique, Collecte, Dashboard, DemandeInscriptionAgence,
-  Depense, GrilleCommissionLigne, InscriptionCollecteurConfig, Marche, PlatformSettings, Restitution, RolePermission, RoleType, SensOperation
+  Depense, GrilleCommissionLigne, InscriptionCollecteurConfig, Marche, PlatformSettings, Restitution, RolePermission, RoleType, SensOperation,
+  SimulationResultat
 } from '../models/models';
 import { ImageCompressService } from './image-compress.service';
 
@@ -114,6 +115,20 @@ export class ApiService {
     return this.http.get<Dashboard>(`${this.base}/dashboard`, { params: httpParams });
   }
 
+  simuler(params: {
+    debut: string;
+    fin: string;
+    agenceId?: number | null;
+  }): Observable<SimulationResultat> {
+    let httpParams = new HttpParams()
+      .set('debut', params.debut)
+      .set('fin', params.fin);
+    if (params.agenceId != null) {
+      httpParams = httpParams.set('agenceId', params.agenceId);
+    }
+    return this.http.get<SimulationResultat>(`${this.base}/simulateur`, { params: httpParams });
+  }
+
   // Agences
   getAgences(): Observable<Agence[]> {
     return this.http.get<Agence[]>(`${this.base}/agences`);
@@ -141,6 +156,13 @@ export class ApiService {
 
   saveGrilleCommission(agenceId: number, lignes: GrilleCommissionLigne[]): Observable<GrilleCommissionLigne[]> {
     return this.http.put<GrilleCommissionLigne[]>(`${this.base}/agences/${agenceId}/grille-commission`, { lignes });
+  }
+
+  resetGrilleCommission(agenceId: number): Observable<GrilleCommissionLigne[]> {
+    return this.http.post<GrilleCommissionLigne[]>(
+      `${this.base}/agences/${agenceId}/grille-commission/reinitialiser`,
+      {}
+    );
   }
 
   getCategoriesDepenses(agenceId?: number | null, activesOnly = false): Observable<CategorieDepense[]> {
@@ -256,6 +278,14 @@ export class ApiService {
     return this.http.post<Collecte>(`${this.base}/collectes`, dto);
   }
 
+  signerCollecte(id: number, signatureClient: string): Observable<Collecte> {
+    return this.http.patch<Collecte>(`${this.base}/collectes/${id}/signer`, { signatureClient });
+  }
+
+  annulerCollecte(id: number): Observable<Collecte> {
+    return this.http.post<Collecte>(`${this.base}/collectes/${id}/annuler`, {});
+  }
+
   // Restitutions
   getRestitutions(agenceId?: number | null): Observable<Restitution[]> {
     let params = new HttpParams();
@@ -279,6 +309,14 @@ export class ApiService {
     const body: { signatureClient: string; commission?: number } = { signatureClient };
     if (commission != null) body.commission = commission;
     return this.http.patch<Restitution>(`${this.base}/restitutions/${id}/finaliser`, body);
+  }
+
+  getRestitution(id: number): Observable<Restitution> {
+    return this.http.get<Restitution>(`${this.base}/restitutions/${id}`);
+  }
+
+  renvoyerRecuRestitution(id: number): Observable<Restitution> {
+    return this.http.post<Restitution>(`${this.base}/restitutions/${id}/renvoyer-recu`, {});
   }
 
   modifierCommissionRestitution(id: number, commission: number): Observable<Restitution> {

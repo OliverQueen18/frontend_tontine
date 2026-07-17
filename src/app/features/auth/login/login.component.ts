@@ -43,6 +43,12 @@ export class LoginComponent {
 
   password = '';
 
+  showPassword = false;
+
+  showNewPassword = false;
+
+  showConfirmPassword = false;
+
   rememberMe = true;
 
   loading = signal(false);

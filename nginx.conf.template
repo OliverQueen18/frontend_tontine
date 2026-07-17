@@ -19,6 +19,9 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        # Certains reverse-proxies amont omettent Authorization : on le force.
+        proxy_set_header Authorization $http_authorization;
+        proxy_pass_request_headers on;
 
         # Requêtes same-origin via le proxy : évite le rejet CORS côté Spring
         # quand CORS_ORIGINS n'est pas encore aligné sur le domaine public.

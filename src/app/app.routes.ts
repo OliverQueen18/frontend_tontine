@@ -88,6 +88,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/rapports/rapports.component').then(m => m.RapportsComponent)
       },
       {
+        path: 'simulateur',
+        canActivate: [roleGuard('SUPER_ADMIN', 'ADMIN_AGENCE')],
+        loadComponent: () => import('./features/simulateur/simulateur.component').then(m => m.SimulateurComponent)
+      },
+      {
         path: 'audit',
         canActivate: [roleGuard('SUPER_ADMIN', 'ADMIN_AGENCE', 'AUDITEUR')],
         loadComponent: () => import('./features/audit/audit.component').then(m => m.AuditComponent)

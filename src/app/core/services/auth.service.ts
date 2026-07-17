@@ -51,10 +51,10 @@ export class AuthService {
   }
 
   refresh(): Observable<AuthResponse> {
-    const refreshToken = localStorage.getItem(REFRESH_KEY) || sessionStorage.getItem(REFRESH_KEY);
+    const refreshToken = this.getRefreshToken();
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/refresh`, { refreshToken })
       .pipe(tap(res => {
-        const remember = !!localStorage.getItem(REFRESH_KEY);
+        const remember = !!localStorage.getItem(REFRESH_KEY) || !!localStorage.getItem(USER_KEY);
         this.persist(res, remember);
       }));
   }
@@ -71,7 +71,17 @@ export class AuthService {
   }
 
   getAccessToken(): string | null {
-    return localStorage.getItem(ACCESS_KEY) || sessionStorage.getItem(ACCESS_KEY);
+    return localStorage.getItem(ACCESS_KEY)
+      || sessionStorage.getItem(ACCESS_KEY)
+      || this.currentUser()?.accessToken
+      || null;
+  }
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem(REFRESH_KEY)
+      || sessionStorage.getItem(REFRESH_KEY)
+      || this.currentUser()?.refreshToken
+      || null;
   }
 
   hasRole(...roles: RoleType[]): boolean {

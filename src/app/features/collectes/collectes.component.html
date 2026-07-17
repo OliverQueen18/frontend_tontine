@@ -18,20 +18,19 @@
   <div class="alert alert-success">{{ message() }}</div>
 }
 
-@if (!auth.hasRole('AGENT')) {
-  <div class="toolbar card filters-bar">
+<div class="toolbar card filters-bar">
+  @if (canFilterAgents) {
     <label class="filter-field">
       <span class="filter-label">Agent</span>
-      <select [(ngModel)]="agentId" name="agentId" (ngModelChange)="loadPortefeuille(); loadHistorique()">
+      <select [(ngModel)]="agentId" name="agentId" (ngModelChange)="onAgentFilterChange()">
+        <option [ngValue]="null">Tous les agents</option>
         @for (a of agents(); track a.id) {
           <option [ngValue]="a.id">{{ a.nomComplet }} ({{ a.code }})</option>
         }
       </select>
     </label>
-  </div>
-}
+  }
 
-<div class="toolbar card filters-bar">
   <label class="filter-field filter-field--grow">
     <span class="filter-label">Rechercher</span>
     <input
@@ -65,58 +64,66 @@
 </div>
 
 @if (mode === 'assistant') {
-  <div class="client-list">
-    @for (item of filteredPortefeuille(); track item.clientId) {
-      <article
-        class="client-card"
-        [class.client-card--active]="isSelected(item)"
-        role="button"
-        tabindex="0"
-        (click)="startCollecte(item)"
-        (keydown.enter)="startCollecte(item)"
-        (keydown.space)="$event.preventDefault(); startCollecte(item)"
-      >
-        <div class="client-card__photo">
-          @if (item.clientPhotoUrl) {
-            <img [src]="photoSrc(item.clientPhotoUrl)" alt="" />
+  @if (canFilterAgents && !agentId) {
+    <div class="empty-state card">
+      <p>Sélectionnez un agent pour afficher son portefeuille et effectuer une collecte.</p>
+      <p class="hint">Pour consulter toutes les collectes, ouvrez l’onglet <strong>Historique</strong>.</p>
+      <button type="button" class="btn btn-primary btn-sm" (click)="mode='historique'; loadHistorique()">Voir l’historique</button>
+    </div>
+  } @else {
+    <div class="client-list">
+      @for (item of filteredPortefeuille(); track item.clientId) {
+        <article
+          class="client-card"
+          [class.client-card--active]="isSelected(item)"
+          role="button"
+          tabindex="0"
+          (click)="startCollecte(item)"
+          (keydown.enter)="startCollecte(item)"
+          (keydown.space)="$event.preventDefault(); startCollecte(item)"
+        >
+          <div class="client-card__photo">
+            @if (item.clientPhotoUrl) {
+              <img [src]="photoSrc(item.clientPhotoUrl)" alt="" />
+            } @else {
+              <span class="client-card__photo-empty"><i class="pi pi-user"></i></span>
+            }
+          </div>
+
+          <div class="client-card__main">
+            <div class="client-card__head">
+              <h3>{{ item.clientNom }}</h3>
+              <span class="client-card__code">{{ item.clientCode }}</span>
+            </div>
+            <div class="client-card__stats">
+              <span><small>Montant/j</small> {{ item.montantJournalier | fcfa }}</span>
+              <span><small>Solde</small> {{ item.soldeEpargne | fcfa }}</span>
+              <span><small>Jours payés</small> {{ item.nombreJoursPayes ?? 0 }}</span>
+              <span><small>Retrait prévu</small> {{ item.dateProbableRetrait ? (item.dateProbableRetrait | date:'dd/MM/yyyy') : '—' }}</span>
+            </div>
+          </div>
+
+          <div class="client-card__action">
+            <i class="pi pi-chevron-right"></i>
+            <span>Collecter</span>
+          </div>
+        </article>
+      } @empty {
+        <div class="empty-state card">
+          @if (filterQ()) {
+            <p>Aucun client ne correspond à « {{ filterQ() }} »</p>
+            <button type="button" class="btn btn-secondary btn-sm" (click)="clearFilters()">Effacer la recherche</button>
           } @else {
-            <span class="client-card__photo-empty"><i class="pi pi-user"></i></span>
+            <p>Aucun client dans le portefeuille</p>
           }
         </div>
-
-        <div class="client-card__main">
-          <div class="client-card__head">
-            <h3>{{ item.clientNom }}</h3>
-            <span class="client-card__code">{{ item.clientCode }}</span>
-          </div>
-          <div class="client-card__stats">
-            <span><small>Montant/j</small> {{ item.montantJournalier | fcfa }}</span>
-            <span><small>Solde</small> {{ item.soldeEpargne | fcfa }}</span>
-            <span><small>Jours payés</small> {{ item.nombreJoursPayes ?? 0 }}</span>
-            <span><small>Retrait prévu</small> {{ item.dateProbableRetrait ? (item.dateProbableRetrait | date:'dd/MM/yyyy') : '—' }}</span>
-          </div>
-        </div>
-
-        <div class="client-card__action">
-          <i class="pi pi-chevron-right"></i>
-          <span>Collecter</span>
-        </div>
-      </article>
-    } @empty {
-      <div class="empty-state card">
-        @if (filterQ()) {
-          <p>Aucun client ne correspond à « {{ filterQ() }} »</p>
-          <button type="button" class="btn btn-secondary btn-sm" (click)="clearFilters()">Effacer la recherche</button>
-        } @else {
-          <p>Aucun client dans le portefeuille</p>
-        }
-      </div>
-    }
-  </div>
+      }
+    </div>
+  }
 } @else {
   <div class="history-list">
     @for (c of filteredHistorique(); track c.id) {
-      <article class="history-card card">
+      <article class="history-card card" [class.history-card--annulee]="c.annulee">
         <div class="history-card__date">
           <i class="pi pi-calendar"></i>
           {{ c.dateHeure | date:'dd/MM/yyyy HH:mm' }}
@@ -124,11 +131,35 @@
         <div class="history-card__body">
           <strong>{{ c.clientNom }}</strong>
           <span class="history-card__recu">{{ c.numeroRecu }}</span>
+          @if (canFilterAgents && c.agentNom) {
+            <span class="history-card__agent">{{ c.agentNom }}</span>
+          }
+          <div class="history-card__badges">
+            @if (c.annulee) {
+              <span class="badge badge--danger">Annulée</span>
+            } @else if (needsSignature(c)) {
+              <span class="badge badge--warn">Non signée</span>
+            } @else {
+              <span class="badge badge--ok">Signée</span>
+            }
+          </div>
         </div>
         <div class="history-card__meta">
           <span>{{ c.nombreJoursPayes ?? '—' }} j</span>
           <strong>{{ c.montantRecu | fcfa }}</strong>
         </div>
+        @if (!c.annulee) {
+          <div class="history-card__actions">
+            @if (needsSignature(c)) {
+              <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirSignatureHistorique(c)">
+                <i class="pi pi-pencil"></i> Faire signer
+              </button>
+            }
+            <button type="button" class="btn btn-secondary btn-sm" (click)="annulerHistorique(c)">
+              <i class="pi pi-times"></i> Annuler
+            </button>
+          </div>
+        }
       </article>
     } @empty {
       <div class="empty-state card">
@@ -196,10 +227,13 @@
         <div>
           <h3>Signature — {{ selected.clientNom }}</h3>
           <p>Montant : <strong>{{ montantRecu | fcfa }}</strong> · {{ nombreJours }} jour(s)</p>
+          @if (signingExisting) {
+            <p class="hint">Reçu {{ signingExisting.numeroRecu }}</p>
+          }
         </div>
       </div>
       <p class="hint">Le client signe avec le doigt ou la souris</p>
-      <app-signature-pad (signed)="onSigned($event)" (cancel)="showSignature=false; showCollecteForm=true" />
+      <app-signature-pad (signed)="onSigned($event)" (cancel)="cancelSignature()" />
     </div>
   </div>
 }

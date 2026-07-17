@@ -36,6 +36,45 @@ form, .forgot-form {
   gap: 1rem;
 }
 
+.password-field {
+  position: relative;
+  display: block;
+
+  input {
+    width: 100%;
+    padding-right: 2.75rem;
+  }
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.55rem;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: #1a5632;
+    background: rgba(26, 86, 50, 0.08);
+    outline: none;
+  }
+
+  i {
+    font-size: 1rem;
+  }
+}
+
 .login-options {
   display: flex;
   align-items: center;

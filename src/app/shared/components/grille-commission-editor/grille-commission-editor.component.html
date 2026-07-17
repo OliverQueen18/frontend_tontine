@@ -7,7 +7,17 @@
         @if (agenceNom) { — {{ agenceNom }} }
       </p>
     </div>
-    <button type="button" class="btn btn-secondary btn-sm" (click)="addRow()">+ Tranche</button>
+    <div class="grille-header-actions">
+      <button type="button" class="btn btn-secondary btn-sm" (click)="addRow()">+ Tranche</button>
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        (click)="resetToDefault()"
+        [disabled]="loading() || saving() || resetting()"
+      >
+        {{ resetting() ? 'Réinitialisation...' : 'Réinitialiser' }}
+      </button>
+    </div>
   </div>
 
   @if (message()) {
@@ -57,11 +67,21 @@
     </div>
 
     <p class="hint example">
-      Exemple : 0 – 50 000 → 2 500 FCFA ; 50 001 – 150 000 → 7 500 FCFA ; 150 001+ → 15 000 FCFA
+      Grille par défaut : 0–500 → 500 ; 501–1 000 → 1 000 ; … ; 20 001+ → 25 000 FCFA
     </p>
 
-    <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
-      {{ saving() ? 'Enregistrement...' : 'Enregistrer la grille' }}
-    </button>
+    <div class="grille-actions">
+      <button type="button" class="btn btn-primary" [disabled]="saving() || resetting()" (click)="save()">
+        {{ saving() ? 'Enregistrement...' : 'Enregistrer la grille' }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        [disabled]="saving() || resetting() || loading()"
+        (click)="resetToDefault()"
+      >
+        {{ resetting() ? 'Réinitialisation...' : 'Remettre la grille par défaut' }}
+      </button>
+    </div>
   }
 </section>

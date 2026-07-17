@@ -4,9 +4,13 @@
 
     <h1>Restitutions</h1>
 
-    @if (canEffectuer) {
+    @if (auth.hasRole('ADMIN_AGENCE')) {
 
-      <p>Le caissier effectue le paiement ; l'agent collecteur valide la commission et finalise par la signature du client</p>
+      <p>Initiez une restitution, validez la commission proposée, puis finalisez en faisant signer le client</p>
+
+    } @else if (canEffectuer) {
+
+      <p>Effectuez le paiement ; l'agent collecteur valide ensuite la commission et finalise par la signature du client</p>
 
     } @else if (isCollecteur) {
 
@@ -162,11 +166,17 @@
 
       @if (calc['trancheCommission']) {
 
-        <p class="hint" style="margin-top:0.75rem">Tranche appliquée : {{ calc['trancheCommission'] }}</p>
+        <p class="hint" style="margin-top:0.75rem">
+          Tranche appliquée sur le montant journalier
+          @if (calc['montantJournalier'] != null) {
+            ({{ asNumber(calc['montantJournalier']) | fcfa }})
+          }
+          : {{ calc['trancheCommission'] }}
+        </p>
 
       }
 
-      <p class="hint" style="margin-top:0.5rem">L'agent collecteur validera ou ajustera la commission avant signature.</p>
+      <p class="hint" style="margin-top:0.5rem">La commission grille dépend de la mise journalière, pas du total collecté. L'agent peut l'ajuster avant signature.</p>
 
       <div style="margin-top:1rem">
 
@@ -183,105 +193,100 @@
 
 
 <div class="card table-card" style="margin-top:1rem">
-
   <h3>Historique</h3>
-
   <table>
-
     <thead>
-
-      <tr><th>Date</th><th>Reçu</th><th>Client</th><th>Total</th><th>Commission</th><th>Net</th><th>Statut</th></tr>
-
+      <tr>
+        <th>Date</th><th>Reçu</th><th>Client</th><th>Total</th><th>Commission</th><th>Net</th><th>Statut</th><th></th>
+      </tr>
     </thead>
-
     <tbody>
-
       @for (r of restitutions(); track r.id) {
-
         <tr>
-
           <td>{{ r.dateHeure | date:'dd/MM/yyyy HH:mm' }}</td>
-
           <td>{{ r.numeroRecu }}</td>
-
           <td>{{ r.clientNom }}</td>
-
           <td>{{ r.totalCollecte | fcfa }}</td>
-
           <td>{{ r.commission | fcfa }}</td>
-
           <td>{{ r.montantNet | fcfa }}</td>
-
           <td>
-
             <span class="badge" [class.badge-success]="r.validee">
-
               {{ r.validee ? 'Finalisée' : 'En attente signature' }}
-
             </span>
-
           </td>
-
+          <td>
+            @if (r.validee) {
+              <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirRecu(r)">
+                <i class="pi pi-print"></i> Reçu
+              </button>
+            }
+          </td>
         </tr>
-
       } @empty {
-
-        <tr><td colspan="7">Aucune restitution</td></tr>
-
+        <tr><td colspan="8">Aucune restitution</td></tr>
       }
-
     </tbody>
-
   </table>
-
 </div>
 
-
-
 @if (showSignature && selectedRestitution; as r) {
-
   <div class="modal-backdrop signature-modal">
-
     <div class="modal modal-lg">
-
       <h3>Signature du client</h3>
-
       <p class="hint">
-
         Restitution {{ r.numeroRecu }} — {{ r.clientNom }}
-
       </p>
-
       <div class="kpi-grid" style="margin-bottom:1rem">
-
         <div class="kpi"><span>Total collecté</span><strong>{{ r.totalCollecte | fcfa }}</strong></div>
-
         <div class="kpi warn"><span>Commission auto</span><strong>{{ r.commissionCalculee | fcfa }}</strong></div>
-
         <div class="kpi success"><span>Net client</span><strong>{{ (r.totalCollecte ?? 0) - commissionDraft | fcfa }}</strong></div>
-
       </div>
-
       <label>Commission retenue (modifiable, 0 accepté)
-
         <app-fcfa-amount-input
-
           [(ngModel)]="commissionDraft"
-
           name="signatureCommission"
-
           ariaLabel="Commission retenue"
-
         />
-
       </label>
-
       <app-signature-pad (signed)="onSigned($event)" (cancel)="showSignature=false" />
-
     </div>
-
   </div>
-
 }
 
+@if (showReceipt && receiptRestitution; as recu) {
+  <div class="modal-backdrop" (click)="fermerRecu()">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()" style="max-width:820px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1rem">
+        <div>
+          <h3 style="margin:0">Reçu {{ recu.numeroRecu }}</h3>
+          <p class="hint" style="margin:0.35rem 0 0">Deux exemplaires sur la même fiche (client + agence)</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="fermerRecu()">Fermer</button>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem">
+        <button type="button" class="btn btn-primary" (click)="imprimerRecu()">
+          <i class="pi pi-print"></i> Imprimer
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          [disabled]="!recu.clientEmail"
+          (click)="envoyerRecuEmail()"
+          [title]="recu.clientEmail ? ('Envoyer à ' + recu.clientEmail) : 'Aucune adresse e-mail client'"
+        >
+          <i class="pi pi-envelope"></i> Envoyer par e-mail
+        </button>
+      </div>
+
+      @if (!recu.clientEmail) {
+        <p class="hint" style="margin-bottom:0.75rem">Ce client n’a pas d’e-mail — l’envoi numérique est indisponible.</p>
+      }
+
+      <div style="max-height:70vh;overflow:auto;padding:0.5rem;background:#f8fafc;border-radius:8px">
+        <app-restitution-receipt [restitution]="recu" />
+      </div>
+    </div>
+  </div>
+}
 

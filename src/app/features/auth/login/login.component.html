@@ -23,9 +23,24 @@
         </label>
 
         <label>Mot de passe
-
-          <input type="password" [(ngModel)]="password" name="password" autocomplete="current-password" required />
-
+          <div class="password-field">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              [(ngModel)]="password"
+              name="password"
+              autocomplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="showPassword = !showPassword"
+              [attr.aria-label]="showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+              [attr.aria-pressed]="showPassword"
+            >
+              <i [class]="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'" aria-hidden="true"></i>
+            </button>
+          </div>
         </label>
 
         <div class="login-options">
@@ -223,15 +238,45 @@
         <form (ngSubmit)="resetPassword()" class="forgot-form">
 
           <label>Nouveau mot de passe
-
-            <input type="password" [(ngModel)]="newPassword" name="newPassword" autocomplete="new-password" required />
-
+            <div class="password-field">
+              <input
+                [type]="showNewPassword ? 'text' : 'password'"
+                [(ngModel)]="newPassword"
+                name="newPassword"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                (click)="showNewPassword = !showNewPassword"
+                [attr.aria-label]="showNewPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                [attr.aria-pressed]="showNewPassword"
+              >
+                <i [class]="showNewPassword ? 'pi pi-eye-slash' : 'pi pi-eye'" aria-hidden="true"></i>
+              </button>
+            </div>
           </label>
 
           <label>Confirmer le mot de passe
-
-            <input type="password" [(ngModel)]="confirmPassword" name="confirmPassword" autocomplete="new-password" required />
-
+            <div class="password-field">
+              <input
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                [(ngModel)]="confirmPassword"
+                name="confirmPassword"
+                autocomplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                (click)="showConfirmPassword = !showConfirmPassword"
+                [attr.aria-label]="showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'"
+                [attr.aria-pressed]="showConfirmPassword"
+              >
+                <i [class]="showConfirmPassword ? 'pi pi-eye-slash' : 'pi pi-eye'" aria-hidden="true"></i>
+              </button>
+            </div>
           </label>
 
           <button class="btn btn-primary btn-block" type="submit" [disabled]="loading()">

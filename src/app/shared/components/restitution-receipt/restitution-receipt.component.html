@@ -1,0 +1,91 @@
+<div #receiptRoot class="receipt-sheet">
+  @for (ex of exemplaires; track ex; let last = $last) {
+    <article class="receipt-slip">
+      <header class="receipt-slip__head">
+        <div>
+          <p class="brand-name">Tontine Marché</p>
+          <p class="brand-sub">Reçu de restitution</p>
+        </div>
+        <span class="exemplaire">{{ labelExemplaire(ex) }}</span>
+      </header>
+
+      <div class="receipt-slip__meta">
+        <div>
+          <span>N° reçu</span>
+          <strong>{{ restitution.numeroRecu }}</strong>
+        </div>
+        <div>
+          <span>Date</span>
+          <strong>{{ restitution.dateHeure | date:'dd/MM/yyyy HH:mm' }}</strong>
+        </div>
+        <div>
+          <span>Client</span>
+          <strong>{{ restitution.clientNom }}</strong>
+        </div>
+        <div>
+          <span>Code client</span>
+          <strong>{{ restitution.clientCode }}</strong>
+        </div>
+        <div>
+          <span>Téléphone</span>
+          <strong>{{ restitution.clientTelephone || '—' }}</strong>
+        </div>
+        <div>
+          <span>Marché</span>
+          <strong>{{ restitution.marcheNom || '—' }}</strong>
+        </div>
+        <div>
+          <span>Mise journalière</span>
+          <strong>{{ restitution.montantJournalier | fcfa }}</strong>
+        </div>
+        <div>
+          <span>Agent</span>
+          <strong>{{ restitution.agentNom || '—' }}</strong>
+        </div>
+      </div>
+
+      <div class="amounts">
+        <div class="row">
+          <span>Total collecté</span>
+          <strong>{{ restitution.totalCollecte | fcfa }}</strong>
+        </div>
+        <div class="row">
+          <span>Commission</span>
+          <strong>{{ restitution.commission | fcfa }}</strong>
+        </div>
+        <div class="row total">
+          <span>Montant restitué</span>
+          <strong>{{ restitution.montantNet | fcfa }}</strong>
+        </div>
+      </div>
+
+      <footer class="receipt-slip__foot">
+        <div class="agency-block">
+          <div class="sig-label">Agence</div>
+          <strong>{{ restitution.agenceNom || '—' }}</strong><br />
+          {{ restitution.agenceTelephone || '' }}
+          @if (restitution.agenceAdresse) {
+            <br />{{ restitution.agenceAdresse }}
+          }
+          @if (restitution.agenceVille) {
+            <br />{{ restitution.agenceVille }}
+          }
+        </div>
+        <div>
+          <div class="sig-label">Signature client</div>
+          <div class="sig-box">
+            @if (restitution.signatureClient) {
+              <img [src]="restitution.signatureClient" alt="Signature" />
+            } @else {
+              <span style="color:#94a3b8">—</span>
+            }
+          </div>
+        </div>
+      </footer>
+    </article>
+
+    @if (!last) {
+      <hr class="receipt-cut" />
+    }
+  }
+</div>

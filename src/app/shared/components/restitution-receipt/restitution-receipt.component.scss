@@ -1,0 +1,153 @@
+.receipt-sheet {
+  width: 100%;
+  max-width: 210mm;
+  margin: 0 auto;
+  background: #fff;
+}
+
+.receipt-slip {
+  min-height: 280px;
+  padding: 1rem 1.15rem;
+  border: 1.5px solid #0b1f3a;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.receipt-slip + .receipt-slip {
+  margin-top: 0.75rem;
+}
+
+.receipt-cut {
+  margin: 0.65rem 0;
+  border: none;
+  border-top: 1.5px dashed #94a3b8;
+  position: relative;
+}
+
+.receipt-cut::after {
+  content: '✂ Découper';
+  position: absolute;
+  top: -0.55rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  color: #64748b;
+  font-size: 0.7rem;
+  padding: 0 0.5rem;
+}
+
+.receipt-slip__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 2px solid #0b1f3a;
+  margin-bottom: 0.85rem;
+}
+
+.brand-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0b1f3a;
+}
+
+.brand-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.exemplaire {
+  align-self: flex-start;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #0b1f3a;
+  color: #fff;
+  padding: 0.3rem 0.55rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.receipt-slip__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 1rem;
+  font-size: 0.86rem;
+  margin-bottom: 0.85rem;
+
+  span {
+    display: block;
+    color: #64748b;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+}
+
+.amounts {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+  margin-bottom: 0.85rem;
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    padding: 0.25rem 0;
+  }
+
+  .total {
+    border-top: 1px solid #cbd5e1;
+    margin-top: 0.35rem;
+    padding-top: 0.45rem;
+    font-weight: 700;
+    color: #166534;
+  }
+}
+
+.receipt-slip__foot {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  font-size: 0.78rem;
+}
+
+.sig-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.3rem;
+}
+
+.sig-box {
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  min-height: 56px;
+  padding: 0.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+
+  img {
+    max-height: 52px;
+    max-width: 100%;
+  }
+}
+
+.agency-block {
+  color: #475569;
+  line-height: 1.4;
+}

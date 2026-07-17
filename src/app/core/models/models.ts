@@ -232,6 +232,7 @@ export interface Collecte {
   dateHeure?: string;
   signatureClient?: string;
   validee?: boolean;
+  annulee?: boolean;
 }
 
 export interface Restitution {
@@ -240,7 +241,19 @@ export interface Restitution {
   clientId: number;
   clientCode?: string;
   clientNom?: string;
+  clientTelephone?: string;
+  clientEmail?: string;
+  montantJournalier?: number;
+  marcheNom?: string;
   agenceId?: number;
+  agenceNom?: string;
+  agenceTelephone?: string;
+  agenceEmail?: string;
+  agenceAdresse?: string;
+  agenceVille?: string;
+  agentId?: number;
+  agentNom?: string;
+  agentTelephone?: string;
   totalCollecte?: number;
   commission?: number;
   commissionCalculee?: number;
@@ -349,4 +362,43 @@ export interface AuditLog {
   reference: string;
   details: string;
   agenceId: number;
+}
+
+export interface SimulationClientLigne {
+  clientId: number;
+  clientCode: string;
+  clientNom: string;
+  agenceId: number;
+  agenceNom: string;
+  montantJournalier: number;
+  collecteSimulee: number;
+  commissionAgence: number;
+  trancheLabel: string;
+}
+
+export interface SimulationAgenceLigne {
+  agenceId: number;
+  agenceNom: string;
+  tauxCommissionAdmin: number;
+  nombreClients: number;
+  totalMisesJournalieres: number;
+  totalCollectesSimulees: number;
+  beneficeAgence: number;
+  commissionAdmin: number;
+}
+
+export interface SimulationResultat {
+  debut: string;
+  fin: string;
+  nombreJours: number;
+  agenceId: number | null;
+  agenceNom: string | null;
+  tauxCommissionAdmin: number | null;
+  nombreClients: number;
+  totalMisesJournalieres: number;
+  totalCollectesSimulees: number;
+  beneficeAgence: number;
+  commissionAdmin: number;
+  parAgence: SimulationAgenceLigne[];
+  clients: SimulationClientLigne[];
 }
