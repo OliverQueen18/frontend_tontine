@@ -155,6 +155,29 @@ export class AgencesComponent implements OnInit {
     });
   }
 
+  supprimer(a: Agence): void {
+    if (!a.id) return;
+    const ok = confirm(
+      `Supprimer définitivement l'agence « ${a.nom} » ?\n\n` +
+      `Cette action est irréversible et effacera tous les agents, clients, collectes, ` +
+      `restitutions, dépenses, caisses et utilisateurs liés à cette agence.`
+    );
+    if (!ok) return;
+    const confirmCode = prompt(`Pour confirmer, saisissez le code agence : ${a.code}`);
+    if (confirmCode !== a.code) {
+      this.message.set('Suppression annulée : code incorrect');
+      return;
+    }
+    this.api.supprimerAgence(a.id).subscribe({
+      next: () => {
+        this.closeDetail();
+        this.message.set('Agence supprimée définitivement');
+        this.load();
+      },
+      error: err => this.message.set(err?.error?.message || 'Erreur lors de la suppression')
+    });
+  }
+
   openGrille(a: Agence): void {
     this.closeDetail();
     this.grilleAgence = a;

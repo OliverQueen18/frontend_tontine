@@ -130,11 +130,15 @@ export class DevenezCollecteurComponent implements OnInit {
     }
     this.error.set('');
     this.sendingOtp.set(true);
-    this.api.envoyerOtpInscription(email, this.form.nomComplet).subscribe({
+    this.api.envoyerOtpInscription(email, this.form.nomComplet, this.form.telephone).subscribe({
       next: res => {
         this.sendingOtp.set(false);
         this.otpSent.set(true);
-        this.otpMasked = res.maskedEmail || email;
+        const parts = [res.maskedEmail || email];
+        if (res.smsSent && res.maskedPhone) {
+          parts.push(res.maskedPhone);
+        }
+        this.otpMasked = parts.join(' / ');
         this.emailVerified.set(false);
         this.verificationToken = '';
       },

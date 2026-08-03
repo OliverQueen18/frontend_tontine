@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, from, map, switchMap } from 'rxjs';
+import { Observable, catchError, from, map, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  Agence, Agent, AppUser, AuditLog, Caisse, CategorieDepense, Client, ClientHistorique, Collecte, Dashboard, DemandeInscriptionAgence,
+  Agence, Agent, AppUser, AuditLog, Caisse, CaisseControle, CategorieDepense, Client, ClientHistorique, Collecte, Dashboard, DemandeInscriptionAgence,
   Depense, GrilleCommissionLigne, InscriptionCollecteurConfig, Marche, PlatformSettings, Restitution, RolePermission, RoleType, SensOperation,
   SimulationResultat
 } from '../models/models';
 import { ImageCompressService } from './image-compress.service';
+import { formatUploadError } from '../utils/upload-error.util';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -31,7 +32,11 @@ export class ApiService {
         const form = new FormData();
         form.append('file', compressed, compressed.name);
         return this.http.post<{ url: string }>(`${this.base}/public/media/upload`, form);
-      })
+      }),
+      catchError(err => throwError(() => ({
+        status: (err as { status?: number })?.status,
+        error: { message: formatUploadError(err) }
+      })))
     );
   }
 
@@ -44,7 +49,11 @@ export class ApiService {
         const form = new FormData();
         form.append('file', prepared, prepared.name);
         return this.http.post<{ url: string }>(`${this.base}/public/media/upload-document`, form);
-      })
+      }),
+      catchError(err => throwError(() => ({
+        status: (err as { status?: number })?.status,
+        error: { message: formatUploadError(err) }
+      })))
     );
   }
 
@@ -52,10 +61,16 @@ export class ApiService {
     return this.http.get<InscriptionCollecteurConfig>(`${this.base}/public/inscription-collecteur/config`);
   }
 
-  envoyerOtpInscription(email: string, nomComplet?: string) {
-    return this.http.post<{ message: string; maskedEmail?: string; expiresInSeconds?: number }>(
+  envoyerOtpInscription(email: string, nomComplet?: string, telephone?: string) {
+    return this.http.post<{
+      message: string;
+      maskedEmail?: string;
+      maskedPhone?: string;
+      smsSent?: boolean;
+      expiresInSeconds?: number;
+    }>(
       `${this.base}/public/inscription-collecteur/envoyer-otp`,
-      { email, nomComplet }
+      { email, nomComplet, telephone }
     );
   }
 
@@ -148,6 +163,14 @@ export class ApiService {
 
   desactiverAgence(id: number): Observable<Agence> {
     return this.http.patch<Agence>(`${this.base}/agences/${id}/desactiver`, {});
+  }
+
+  setAgenceSmsTousClients(id: number, enabled: boolean): Observable<Agence> {
+    return this.http.patch<Agence>(`${this.base}/agences/${id}/sms-tous-clients`, { enabled });
+  }
+
+  supprimerAgence(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/agences/${id}`);
   }
 
   getGrilleCommission(agenceId: number): Observable<GrilleCommissionLigne[]> {
@@ -330,12 +353,48 @@ export class ApiService {
     });
   }
 
+  getCaisseControle(agenceId: number): Observable<CaisseControle> {
+    return this.http.get<CaisseControle>(`${this.base}/caisse/controle`, {
+      params: new HttpParams().set('agenceId', agenceId)
+    });
+  }
+
+  getCaisseHistorique(agenceId: number, debut?: string, fin?: string): Observable<Caisse[]> {
+    let params = new HttpParams().set('agenceId', agenceId);
+    if (debut) params = params.set('debut', debut);
+    if (fin) params = params.set('fin', fin);
+    return this.http.get<Caisse[]>(`${this.base}/caisse/historique`, { params });
+  }
+
+  getCaisseDetail(agenceId: number, date: string): Observable<Caisse> {
+    return this.http.get<Caisse>(`${this.base}/caisse/detail`, {
+      params: new HttpParams().set('agenceId', agenceId).set('date', date)
+    });
+  }
+
+  getCaisseById(id: number): Observable<Caisse> {
+    return this.http.get<Caisse>(`${this.base}/caisse/${id}`);
+  }
+
   ouvrirCaisse(agenceId: number, soldeInitial?: number): Observable<Caisse> {
     return this.http.post<Caisse>(`${this.base}/caisse/ouvrir`, { agenceId, soldeInitial });
   }
 
-  cloturerCaisse(agenceId: number, soldeReel: number, observation?: string): Observable<Caisse> {
-    return this.http.post<Caisse>(`${this.base}/caisse/cloturer`, { agenceId, soldeReel, observation });
+  cloturerCaisse(agenceId: number, soldeReel: number, observation?: string, dateCaisse?: string): Observable<Caisse> {
+    return this.http.post<Caisse>(`${this.base}/caisse/cloturer`, {
+      agenceId,
+      soldeReel,
+      observation,
+      dateCaisse
+    });
+  }
+
+  annulerClotureCaisse(id: number): Observable<Caisse> {
+    return this.http.post<Caisse>(`${this.base}/caisse/${id}/annuler-cloture`, {});
+  }
+
+  supprimerCaisse(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/caisse/${id}`);
   }
 
   // Dépenses

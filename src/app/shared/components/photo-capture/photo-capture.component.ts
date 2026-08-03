@@ -1,6 +1,7 @@
 import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core';
 import { ApiService } from '../../../core/services/api.service';
 import { SiteContentService } from '../../../core/services/site-content.service';
+import { formatUploadError } from '../../../core/utils/upload-error.util';
 
 @Component({
   selector: 'app-photo-capture',
@@ -39,8 +40,9 @@ import { SiteContentService } from '../../../core/services/site-content.service'
         <small class="upload-hint"><i class="pi pi-spin pi-spinner"></i> Téléversement de la photo…</small>
       }
       @if (error()) {
-        <small class="error-hint">{{ error() }}</small>
+        <div class="error-hint" role="alert">{{ error() }}</div>
       }
+      <small class="size-hint">Taille max. : 15 Mo (compressée automatiquement avant envoi)</small>
       @if (cameraActive()) {
         <video #videoEl autoplay playsinline muted class="camera-feed"></video>
       }
@@ -71,7 +73,16 @@ import { SiteContentService } from '../../../core/services/site-content.service'
       background: #000;
     }
     .upload-hint { color: #64748b; }
-    .error-hint { color: #b91c1c; }
+    .size-hint { color: #94a3b8; font-size: 0.75rem; }
+    .error-hint {
+      color: #b91c1c;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 0.5rem 0.65rem;
+      font-size: 0.85rem;
+      line-height: 1.35;
+    }
     .disabled { opacity: 0.6; pointer-events: none; }
   `]
 })
@@ -159,7 +170,7 @@ export class PhotoCaptureComponent {
       },
       error: err => {
         this.uploading.set(false);
-        this.error.set(err?.error?.message || 'Erreur lors du téléversement');
+        this.error.set(formatUploadError(err, 'Erreur lors du téléversement de la photo'));
       }
     });
   }

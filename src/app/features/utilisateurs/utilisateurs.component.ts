@@ -49,7 +49,7 @@ export class UtilisateursComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.isSuperAdmin) {
-      this.api.getAgences().subscribe(a => this.agences.set(a));
+      this.api.getAgences().subscribe(a => this.agences.set(a.filter(x => x.statut === 'ACTIF')));
     } else if (this.isAdminAgence) {
       this.filterAgenceId = this.auth.agenceId();
       const nom = this.auth.user()?.agenceNom;

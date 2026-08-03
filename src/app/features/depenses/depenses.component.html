@@ -4,9 +4,20 @@
     <p>Suivi et validation des entrées et sorties de caisse</p>
   </div>
   <div class="page-actions">
-    <button type="button" class="btn btn-primary" (click)="openCreate()">Ajout rapide</button>
+    <button type="button" class="btn btn-primary" (click)="openCreate()" [disabled]="caisseBloquee">Ajout rapide</button>
   </div>
 </div>
+
+@if (caisseBloquee) {
+  <div class="alert alert-warning">
+    {{ caisseOuverte.messageBlocage }}
+    @if (caisseOuverte.canOpenCaisse) {
+      <a routerLink="/app/caisse" class="alert-link">
+        {{ caisseOuverte.hasAnterieuresOuvertes ? ' Clôturer les caisses antérieures' : ' Ouvrir la caisse' }}
+      </a>
+    }
+  </div>
+}
 
 @if (message()) {
   <div class="alert alert-info">{{ message() }}</div>
@@ -33,7 +44,7 @@
           </td>
           <td>
             @if (!d.validee) {
-              <button type="button" class="btn btn-primary btn-sm" (click)="valider(d)">Valider</button>
+              <button type="button" class="btn btn-primary btn-sm" (click)="valider(d)" [disabled]="caisseBloquee">Valider</button>
             }
           </td>
         </tr>

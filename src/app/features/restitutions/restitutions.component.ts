@@ -1,8 +1,9 @@
 import { Component, OnInit, ViewChild, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CaisseOuverteService } from '../../core/services/caisse-ouverte.service';
 import { Client, Restitution } from '../../core/models/models';
 import { FcfaPipe } from '../../shared/pipes/fcfa.pipe';
 import { SignaturePadComponent } from '../../shared/components/signature-pad/signature-pad.component';
@@ -19,7 +20,8 @@ import { DatePipe } from '@angular/common';
     SignaturePadComponent,
     FcfaAmountInputComponent,
     RestitutionReceiptComponent,
-    DatePipe
+    DatePipe,
+    RouterLink
   ],
   templateUrl: './restitutions.component.html'
 })
@@ -42,7 +44,8 @@ export class RestitutionsComponent implements OnInit {
   constructor(
     private api: ApiService,
     public auth: AuthService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    public caisseOuverte: CaisseOuverteService
   ) {}
 
   get canEffectuer(): boolean {
@@ -53,7 +56,12 @@ export class RestitutionsComponent implements OnInit {
     return this.auth.isCollecteur();
   }
 
+  get caisseBloquee(): boolean {
+    return this.caisseOuverte.ouverte() === false;
+  }
+
   ngOnInit(): void {
+    this.caisseOuverte.check();
     this.loadHistorique();
     if (this.isCollecteur) {
       this.loadEnAttente();
@@ -93,6 +101,10 @@ export class RestitutionsComponent implements OnInit {
 
   effectuer(): void {
     if (!this.clientId) return;
+    if (this.caisseBloquee) {
+      this.message.set(this.caisseOuverte.messageBlocage);
+      return;
+    }
     this.api.effectuerRestitution({
       clientId: this.clientId,
       montantNet: 0
@@ -140,6 +152,10 @@ export class RestitutionsComponent implements OnInit {
   }
 
   ouvrirSignature(r: Restitution): void {
+    if (this.caisseBloquee) {
+      this.message.set(this.caisseOuverte.messageBlocage);
+      return;
+    }
     this.selectedRestitution = r;
     this.commissionDraft = this.getCommissionDraft(r);
     this.showSignature = true;

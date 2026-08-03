@@ -1,7 +1,9 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CaisseOuverteService } from '../../core/services/caisse-ouverte.service';
 import { Agent, Collecte } from '../../core/models/models';
 import { FcfaPipe } from '../../shared/pipes/fcfa.pipe';
 import { SignaturePadComponent } from '../../shared/components/signature-pad/signature-pad.component';
@@ -14,7 +16,7 @@ type SortKey = 'nom' | 'solde' | 'jours';
 @Component({
   selector: 'app-collectes',
   standalone: true,
-  imports: [FormsModule, FcfaPipe, SignaturePadComponent, QrScannerComponent, DatePipe],
+  imports: [FormsModule, FcfaPipe, SignaturePadComponent, QrScannerComponent, DatePipe, RouterLink],
   templateUrl: './collectes.component.html',
   styleUrl: './collectes.component.scss'
 })
@@ -50,14 +52,24 @@ export class CollectesComponent implements OnInit {
     );
   });
 
-  constructor(private api: ApiService, public auth: AuthService, private cms: SiteContentService) {}
+  constructor(
+    private api: ApiService,
+    public auth: AuthService,
+    private cms: SiteContentService,
+    public caisseOuverte: CaisseOuverteService
+  ) {}
 
   /** Admin agence / super admin : voir toutes les collectes et filtrer par agent. */
   get canFilterAgents(): boolean {
     return this.auth.hasRole('SUPER_ADMIN', 'ADMIN_AGENCE');
   }
 
+  get caisseBloquee(): boolean {
+    return this.caisseOuverte.ouverte() === false;
+  }
+
   ngOnInit(): void {
+    this.caisseOuverte.check();
     if (this.canFilterAgents) {
       this.mode = 'historique';
     }
@@ -119,6 +131,10 @@ export class CollectesComponent implements OnInit {
   }
 
   startCollecte(item: Collecte): void {
+    if (this.caisseBloquee) {
+      this.message.set(this.caisseOuverte.messageBlocage);
+      return;
+    }
     this.selected = item;
     this.nombreJours = 1;
     this.syncFrom = 'jours';
@@ -129,6 +145,10 @@ export class CollectesComponent implements OnInit {
   }
 
   openQrScanner(): void {
+    if (this.caisseBloquee) {
+      this.message.set(this.caisseOuverte.messageBlocage);
+      return;
+    }
     this.showQrScanner = true;
   }
 
@@ -256,6 +276,10 @@ export class CollectesComponent implements OnInit {
 
   annulerHistorique(c: Collecte): void {
     if (!c.id || c.annulee) return;
+    if (this.caisseBloquee) {
+      this.message.set(this.caisseOuverte.messageBlocage);
+      return;
+    }
     const ok = confirm(
       `Annuler la collecte ${c.numeroRecu} (${c.montantRecu} FCFA) pour ${c.clientNom} ?\n` +
       `Le montant sera retiré du solde du client.`

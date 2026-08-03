@@ -46,7 +46,7 @@ export class AgentsComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
-    this.api.getAgences().subscribe(a => this.agences.set(a));
+    this.api.getAgences().subscribe(a => this.agences.set(a.filter(x => x.statut === 'ACTIF')));
   }
 
   setStatutFilter(value: string): void {

@@ -1,15 +1,16 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { NgClass } from '@angular/common';
+import { NgClass, DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { CaisseOuverteService } from '../../core/services/caisse-ouverte.service';
 import { CategorieDepense, Client, Depense, SensOperation } from '../../core/models/models';
-import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-depenses',
   standalone: true,
-  imports: [FormsModule, DatePipe, NgClass],
+  imports: [FormsModule, DatePipe, NgClass, RouterLink],
   templateUrl: './depenses.component.html',
   styleUrl: './depenses.component.scss'
 })
@@ -21,13 +22,22 @@ export class DepensesComponent implements OnInit {
   form: Depense = this.empty();
   message = signal('');
 
-  constructor(private api: ApiService, public auth: AuthService) {}
+  constructor(
+    private api: ApiService,
+    public auth: AuthService,
+    public caisseOuverte: CaisseOuverteService
+  ) {}
 
   get agenceId(): number | null {
     return this.auth.agenceId();
   }
 
+  get caisseBloquee(): boolean {
+    return this.caisseOuverte.ouverte() === false;
+  }
+
   ngOnInit(): void {
+    this.caisseOuverte.check();
     this.load();
     this.loadCategories();
   }
@@ -57,6 +67,10 @@ export class DepensesComponent implements OnInit {
   }
 
   openCreate(): void {
+    if (this.caisseBloquee) {
+      this.message.set(this.caisseOuverte.messageBlocage);
+      return;
+    }
     this.form = this.empty();
     if (this.auth.agenceId()) this.form.agenceId = this.auth.agenceId()!;
     const first = this.categories()[0];
@@ -89,6 +103,10 @@ export class DepensesComponent implements OnInit {
 
   valider(d: Depense): void {
     if (!d.id) return;
+    if (this.caisseBloquee) {
+      this.message.set(this.caisseOuverte.messageBlocage);
+      return;
+    }
     this.api.validerDepense(d.id).subscribe({
       next: () => {
         this.message.set(this.validationSuccessMessage(d.categorie));

@@ -1,0 +1,73 @@
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+.filter-field {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 10rem;
+}
+
+.filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.periode-list {
+  margin-bottom: 1rem;
+}
+
+.row-selected {
+  background: rgba(26, 86, 50, 0.08);
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.5rem 0 0.75rem;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 1.15rem;
+    margin: 0;
+  }
+}
+
+.warn {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.badge-muted {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.receipt-modal {
+  max-width: 820px;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.receipt-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h3 { margin: 0; }
+
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+}

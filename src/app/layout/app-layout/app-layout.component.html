@@ -1,110 +1,69 @@
 <div class="app-shell" [ngClass]="{ 'sidebar-collapsed': !sidebarOpen, 'is-mobile': isMobile }">
 
   @if (isMobile && sidebarOpen) {
-
     <div class="sidebar-backdrop" (click)="closeSidebar()"></div>
-
   }
 
-
-
   <aside class="sidebar" data-tour="sidebar">
-
-    <div class="sidebar-brand">
-
+    <div class="sidebar-brand" [class.sidebar-brand--collapsed]="!sidebarOpen">
       @if (sidebarOpen) {
-
-        <img src="logo-tontine-marche.png" alt="Tontine Marché" class="brand-logo brand-logo--sidebar" />
-
+        <div class="brand-card">
+          <img src="logo-tontine-marche.png" alt="" class="brand-card__logo" />
+          <div class="brand-card__text">
+            <span class="brand-card__name">Tontine Marché</span>
+            <span class="brand-card__tag">Épargne solidaire</span>
+          </div>
+        </div>
       } @else {
-
-        <img src="icone-tontine-marche.png" alt="Tontine Marché" class="brand-icon" />
-
+        <div class="brand-card brand-card--icon" title="Tontine Marché">
+          <img src="icone-tontine-marche.png" alt="Tontine Marché" class="brand-card__icon" />
+        </div>
       }
-
     </div>
 
     <nav>
-
       @for (item of menu(); track item.route) {
-
         <a [routerLink]="item.route" routerLinkActive="active" [attr.data-tour]="item.route" (click)="closeSidebar()">
-
           <i [class]="item.icon"></i>
-
           @if (sidebarOpen) {
-
             <span class="nav-label">{{ item.label }}</span>
-
             @if (item.route === '/app/demandes-inscription' && inscriptionBadge.count() > 0) {
               <span class="nav-badge" [attr.aria-label]="inscriptionBadge.count() + ' en attente'">{{ inscriptionBadge.count() }}</span>
             }
-
           } @else if (item.route === '/app/demandes-inscription' && inscriptionBadge.count() > 0) {
-
             <span class="nav-badge nav-badge--collapsed">{{ inscriptionBadge.count() }}</span>
-
           }
-
         </a>
-
       }
-
     </nav>
-
   </aside>
 
-
-
   <div class="app-main">
-
     <header class="topbar">
-
       <button type="button" class="icon-btn" data-tour="topbar-toggle" (click)="toggleSidebar()" aria-label="Menu">
-
         <i class="pi pi-bars"></i>
-
       </button>
-
       <div class="topbar-title">Tableau de bord</div>
-
       <button type="button" class="icon-btn topbar-help" data-tour="tour-help" (click)="startTour()" aria-label="Didacticiel" title="Lancer le didacticiel">
-
         <i class="pi pi-question-circle"></i>
-
       </button>
-
       <div class="topbar-user">
-
         <a class="user-meta user-meta--link" data-tour="topbar-user" routerLink="/app/profil" (click)="closeSidebar()">
-
           <strong>{{ auth.user()?.nomComplet }}</strong>
-
           <small>{{ auth.user()?.role }} @if (auth.user()?.agenceNom) { · {{ auth.user()?.agenceNom }} }</small>
-
         </a>
-
         <button type="button" class="btn btn-secondary btn-logout" (click)="logout()">
-
           <span class="logout-label">Déconnexion</span>
-
           <i class="pi pi-sign-out logout-icon"></i>
-
         </button>
-
       </div>
-
     </header>
 
     <main class="content">
-
       <router-outlet />
-
     </main>
-
   </div>
 
   <app-chat-assistant context="app" />
   <app-product-tour />
 </div>
-

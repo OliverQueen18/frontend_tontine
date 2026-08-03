@@ -18,6 +18,17 @@
   <div class="alert alert-success">{{ message() }}</div>
 }
 
+@if (caisseBloquee) {
+  <div class="alert alert-warning">
+    {{ caisseOuverte.messageBlocage }}
+    @if (caisseOuverte.canOpenCaisse) {
+      <a routerLink="/app/caisse" class="alert-link">
+        {{ caisseOuverte.hasAnterieuresOuvertes ? ' Clôturer les caisses antérieures' : ' Ouvrir la caisse' }}
+      </a>
+    }
+  </div>
+}
+
 <div class="toolbar card filters-bar">
   @if (canFilterAgents) {
     <label class="filter-field">

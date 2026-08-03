@@ -41,7 +41,7 @@ export class CategoriesOperationComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.isSuperAdmin) {
-      this.api.getAgences().subscribe(a => this.agences.set(a));
+      this.api.getAgences().subscribe(a => this.agences.set(a.filter(x => x.statut === 'ACTIF')));
     } else {
       this.filterAgenceId = this.auth.agenceId();
     }

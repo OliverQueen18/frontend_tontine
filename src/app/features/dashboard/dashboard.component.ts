@@ -53,7 +53,7 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.canFilterAgence) {
-      this.api.getAgences().subscribe(a => this.agences.set(a));
+      this.api.getAgences().subscribe(a => this.agences.set(a.filter(x => x.statut === 'ACTIF')));
     }
     if (this.canFilterAgent) {
       const agenceId = this.isSuperAdmin ? null : this.auth.agenceId();

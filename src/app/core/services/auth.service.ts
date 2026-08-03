@@ -29,8 +29,20 @@ export class AuthService {
     }).pipe(tap(res => this.persist(res, rememberMe)));
   }
 
-  forgotPassword(username: string): Observable<{ message: string; maskedEmail?: string; expiresInSeconds?: number }> {
-    return this.http.post<{ message: string; maskedEmail?: string; expiresInSeconds?: number }>(
+  forgotPassword(username: string): Observable<{
+    message: string;
+    maskedEmail?: string;
+    maskedPhone?: string;
+    smsSent?: boolean;
+    expiresInSeconds?: number;
+  }> {
+    return this.http.post<{
+      message: string;
+      maskedEmail?: string;
+      maskedPhone?: string;
+      smsSent?: boolean;
+      expiresInSeconds?: number;
+    }>(
       `${environment.apiUrl}/auth/forgot-password`,
       { username }
     );

@@ -7,6 +7,33 @@ h3 {
   margin: 0;
 }
 
+.checkbox-row {
+  display: flex !important;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 500;
+  margin: 0.5rem 0;
+}
+
+.checkbox-row input[type='checkbox'] {
+  width: auto;
+  margin: 0;
+}
+
+.sms-platform-block,
+.sms-agence-block {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.sms-platform-block h4,
+.sms-agence-block h4 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
 .agence-form {
   margin-top: 1rem;
   display: grid;

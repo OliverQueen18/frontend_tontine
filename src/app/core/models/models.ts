@@ -55,6 +55,12 @@ export interface Agence {
   tauxCommission?: number;
   tauxCommissionAdmin?: number;
   statut?: StatutEntity;
+  /** SMS pour tous les clients de l'agence. */
+  smsPourTousClients?: boolean;
+  /** Switch plateforme (lecture seule). */
+  smsPlateformeActive?: boolean;
+  /** Passerelle technique prête (lecture seule). */
+  smsGatewayReady?: boolean;
 }
 
 export type MoyenPaiementMobile = 'ORANGE_MONEY' | 'WAVE';
@@ -92,6 +98,8 @@ export interface PlatformSettings {
   fraisCreationAgence: number;
   telephonePaiementMobile: string;
   tauxCommissionAdminDefaut?: number;
+  smsNotificationsEnabled?: boolean;
+  smsGatewayReady?: boolean;
 }
 
 export interface GrilleCommissionLigne {
@@ -199,6 +207,7 @@ export interface Client {
   nombreJoursPayes?: number;
   dateProbableRetrait?: string;
   commissionEstimee?: number;
+  smsNotificationsEnabled?: boolean;
 }
 
 export interface ClientHistorique {
@@ -283,6 +292,9 @@ export interface Caisse {
   id?: number;
   agenceId?: number;
   agenceNom?: string;
+  agenceTelephone?: string;
+  agenceAdresse?: string;
+  agenceVille?: string;
   dateCaisse?: string;
   soldeInitial?: number;
   totalEntrees?: number;
@@ -294,7 +306,16 @@ export interface Caisse {
   statut?: StatutCaisse;
   dateOuverture?: string;
   dateCloture?: string;
+  ouvertParNom?: string;
+  clotureParNom?: string;
   mouvements?: MouvementCaisse[];
+}
+
+export interface CaisseControle {
+  peutOperer: boolean;
+  message?: string | null;
+  caisseDuJour?: Caisse | null;
+  caissesAnterieuresOuvertes?: Caisse[];
 }
 
 export interface MouvementCaisse {

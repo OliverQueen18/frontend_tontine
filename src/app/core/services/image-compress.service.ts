@@ -1,4 +1,10 @@
 import { Injectable } from '@angular/core';
+import {
+  MAX_COMPRESSED_IMAGE_BYTES,
+  MAX_SOURCE_IMAGE_BYTES,
+  assertImageSourceSize,
+  formatBytes
+} from '../utils/upload-error.util';
 
 export interface ImageCompressOptions {
   /** Largeur/hauteur max (px). Défaut 1600. */
@@ -23,11 +29,18 @@ export class ImageCompressService {
     }
     // SVG : pas de compression canvas pertinente
     if (file.type === 'image/svg+xml') {
+      if (file.size > (options.maxBytes ?? MAX_COMPRESSED_IMAGE_BYTES)) {
+        throw new Error(
+          `Fichier SVG trop volumineux (${formatBytes(file.size)}). Maximum : ${formatBytes(options.maxBytes ?? MAX_COMPRESSED_IMAGE_BYTES)}.`
+        );
+      }
       return file;
     }
 
+    assertImageSourceSize(file, MAX_SOURCE_IMAGE_BYTES);
+
     const maxDimension = options.maxDimension ?? 1600;
-    const maxBytes = options.maxBytes ?? 900_000;
+    const maxBytes = options.maxBytes ?? MAX_COMPRESSED_IMAGE_BYTES;
     let quality = options.quality ?? 0.82;
 
     // Déjà assez petit et dimensions raisonnables → on peut garder tel quel
@@ -91,6 +104,12 @@ export class ImageCompressService {
       }
 
       if (!blob) return file;
+
+      if (blob.size > maxBytes) {
+        throw new Error(
+          `Image trop volumineuse même après compression (${formatBytes(blob.size)}). Maximum : ${formatBytes(maxBytes)}. Choisissez une image plus légère.`
+        );
+      }
 
       const ext = outputType === 'image/png' ? 'png' : outputType === 'image/webp' ? 'webp' : 'jpg';
       const baseName = (file.name || 'image').replace(/\.[^.]+$/, '');

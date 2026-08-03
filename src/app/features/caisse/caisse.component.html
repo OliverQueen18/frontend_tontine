@@ -1,7 +1,23 @@
 <div class="page-header">
   <div>
     <h1>Gestion de caisse</h1>
-    <p>Ouverture, mouvements et clôture quotidienne</p>
+    <p>Ouverture, consultation par période, clôture, annulation et enchaînement des soldes</p>
+  </div>
+  <div class="actions">
+    <button type="button" class="btn" [class.btn-primary]="mode==='jour'" [class.btn-secondary]="mode!=='jour'" (click)="setMode('jour')">
+      Aujourd'hui
+    </button>
+    <button type="button" class="btn" [class.btn-primary]="mode==='periode'" [class.btn-secondary]="mode!=='periode'" (click)="setMode('periode')">
+      Par période
+    </button>
+    @if (caisse()) {
+      <button type="button" class="btn btn-secondary" (click)="ouvrirRecu()">
+        <i class="pi pi-print"></i> Reçu
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="exportExcel()">
+        <i class="pi pi-file-excel"></i> Export Excel
+      </button>
+    }
   </div>
 </div>
 
@@ -9,29 +25,127 @@
   <div class="alert alert-info">{{ message() }}</div>
 }
 
-@if (auth.hasRole('SUPER_ADMIN')) {
-  <div class="toolbar card">
-    <label>Agence
-      <select [(ngModel)]="agenceId" name="agenceId" (ngModelChange)="load()">
+@if (hasAnterieuresOuvertes) {
+  <div class="alert alert-warning">
+    <strong>Action requise :</strong> des caisses antérieures sont encore ouvertes.
+    Vous ne pouvez ni ouvrir la caisse du jour ni effectuer d'opérations tant qu'elles ne sont pas clôturées.
+    <ul style="margin:0.5rem 0 0; padding-left:1.25rem">
+      @for (a of anterieuresOuvertes(); track a.id) {
+        <li>
+          Caisse du {{ a.dateCaisse | date:'dd/MM/yyyy' }}
+          @if (canGererCloture) {
+            — <button type="button" class="btn btn-secondary btn-sm" (click)="allerCloturerAnterieure(a.dateCaisse!)">Clôturer</button>
+          }
+        </li>
+      }
+    </ul>
+  </div>
+}
+
+<div class="toolbar card filters-bar">
+  @if (auth.hasRole('SUPER_ADMIN')) {
+    <label class="filter-field">
+      <span class="filter-label">Agence</span>
+      <select [(ngModel)]="agenceId" name="agenceId" (ngModelChange)="onAgenceChange()">
         @for (a of agences(); track a.id) {
           <option [ngValue]="a.id">{{ a.nom }}</option>
         }
       </select>
     </label>
-  </div>
+  }
+
+  @if (mode === 'periode') {
+    <label class="filter-field">
+      <span class="filter-label">Du</span>
+      <input type="date" [(ngModel)]="debut" name="debut" (ngModelChange)="loadHistorique()" />
+    </label>
+    <label class="filter-field">
+      <span class="filter-label">Au</span>
+      <input type="date" [(ngModel)]="fin" name="fin" (ngModelChange)="loadHistorique()" />
+    </label>
+  }
+</div>
+
+@if (mode === 'periode') {
+  <section class="card table-card periode-list">
+    <h3>Caisses de la période</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Statut</th>
+          <th>Entrées</th>
+          <th>Sorties</th>
+          <th>Solde théorique</th>
+          <th>Solde réel</th>
+          <th>Écart</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (h of historique(); track h.id) {
+          <tr [class.row-selected]="h.dateCaisse === selectedDate">
+            <td>{{ h.dateCaisse | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <span class="badge" [ngClass]="h.statut === 'OUVERTE' ? 'badge-success' : 'badge-muted'">
+                {{ h.statut === 'OUVERTE' ? 'Ouverte' : 'Clôturée' }}
+              </span>
+            </td>
+            <td>{{ h.totalEntrees | fcfa }}</td>
+            <td>{{ h.totalSorties | fcfa }}</td>
+            <td>{{ h.soldeTheorique | fcfa }}</td>
+            <td>{{ h.soldeReel != null ? (h.soldeReel | fcfa) : '—' }}</td>
+            <td [class.warn]="(h.ecart || 0) !== 0">{{ h.ecart != null ? (h.ecart | fcfa) : '—' }}</td>
+            <td>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="openCaisseDate(h.dateCaisse!)">Voir</button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirRecu(h)">Reçu</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8">Aucune caisse sur cette période</td></tr>
+        }
+      </tbody>
+    </table>
+  </section>
 }
 
 @if (!caisse()) {
-  <div class="card">
-    <h3>Ouvrir la caisse du jour</h3>
-    <div class="form-grid">
-      <label>Solde initial (laisser vide pour report automatique)
-        <input type="number" [(ngModel)]="soldeInitial" name="soldeInitial" />
-      </label>
+  @if (mode === 'jour' && canManageToday) {
+    <div class="card">
+      <h3>Ouvrir la caisse du jour</h3>
+      @if (hasAnterieuresOuvertes) {
+        <p class="hint">Clôturez d'abord les caisses antérieures listées ci-dessus.</p>
+      } @else {
+        <p class="hint">
+          Le solde antérieur est reporté automatiquement depuis le solde net (réel) de la dernière caisse clôturée.
+        </p>
+        <div class="form-grid">
+          <label>Solde initial (laisser vide = report automatique)
+            <input type="number" [(ngModel)]="soldeInitial" name="soldeInitial" />
+          </label>
+        </div>
+        <button class="btn btn-primary" style="margin-top:1rem" (click)="ouvrir()">Ouvrir la caisse</button>
+      }
     </div>
-    <button class="btn btn-primary" style="margin-top:1rem" (click)="ouvrir()">Ouvrir la caisse</button>
-  </div>
+  } @else if (mode === 'periode') {
+    <div class="card">
+      <p class="hint">Sélectionnez une caisse dans la liste pour afficher le détail.</p>
+    </div>
+  } @else {
+    <div class="card">
+      <p class="hint">Aucune caisse ouverte aujourd'hui.</p>
+    </div>
+  }
 } @else {
+  <div class="detail-header">
+    <h2>
+      Caisse du {{ caisse()!.dateCaisse | date:'dd/MM/yyyy' }}
+      <span class="badge" [ngClass]="caisse()!.statut === 'OUVERTE' ? 'badge-success' : 'badge-muted'">
+        {{ caisse()!.statut === 'OUVERTE' ? 'Ouverte' : 'Clôturée' }}
+      </span>
+    </h2>
+  </div>
+
   <div class="kpi-grid">
     <div class="kpi"><span>Solde initial</span><strong>{{ caisse()!.soldeInitial | fcfa }}</strong></div>
     <div class="kpi success"><span>Entrées</span><strong>{{ caisse()!.totalEntrees | fcfa }}</strong></div>
@@ -64,9 +178,12 @@
       </table>
     </section>
 
-    @if (caisse()!.statut === 'OUVERTE') {
+    @if (canCloturerCaisseAffichee) {
       <section class="card">
         <h3>Clôture de caisse</h3>
+        @if (!isTodayView) {
+          <p class="hint">Caisse antérieure encore ouverte — clôture obligatoire avant de continuer.</p>
+        }
         <p>Solde attendu : <strong>{{ caisse()!.soldeTheorique | fcfa }}</strong></p>
         <div class="form-grid">
           <label>Solde réel
@@ -77,13 +194,52 @@
           </label>
         </div>
         <button class="btn btn-primary" style="margin-top:1rem" (click)="cloturer()">Valider la clôture</button>
+        <button type="button" class="btn btn-secondary" style="margin-top:1rem; margin-left:0.5rem" (click)="supprimerCaisse()">
+          Supprimer la caisse
+        </button>
       </section>
-    } @else {
+    } @else if (caisse()!.statut === 'CLOTUREE') {
       <section class="card">
         <h3>Caisse clôturée</h3>
         <p>Observation : {{ caisse()!.observation || '—' }}</p>
         <p>Clôturée le {{ caisse()!.dateCloture | date:'dd/MM/yyyy HH:mm' }}</p>
+        @if (caisse()!.clotureParNom) {
+          <p>Par {{ caisse()!.clotureParNom }}</p>
+        }
+        <p class="hint" style="margin-top:0.75rem">
+          Solde net reporté au jour suivant : <strong>{{ caisse()!.soldeReel | fcfa }}</strong>
+        </p>
+        <div class="actions" style="margin-top:1rem; display:flex; flex-wrap:wrap; gap:0.5rem">
+          <button type="button" class="btn btn-primary" (click)="ouvrirRecu()">
+            <i class="pi pi-print"></i> Imprimer le reçu d'arrêté
+          </button>
+          @if (canGererCloture) {
+            <button type="button" class="btn btn-secondary" (click)="annulerCloture()">
+              Annuler la clôture
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="supprimerCaisse()">
+              Supprimer la caisse
+            </button>
+          }
+        </div>
       </section>
     }
+  </div>
+}
+
+@if (showReceipt && receiptCaisse) {
+  <div class="modal-backdrop" (click)="fermerRecu()">
+    <div class="modal modal-lg receipt-modal" (click)="$event.stopPropagation()">
+      <header class="receipt-modal__head">
+        <h3>Reçu d'arrêté de caisse</h3>
+        <div class="actions">
+          <button type="button" class="btn btn-primary" (click)="imprimerRecu()">
+            <i class="pi pi-print"></i> Imprimer
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="fermerRecu()">Fermer</button>
+        </div>
+      </header>
+      <app-caisse-receipt [caisse]="receiptCaisse" />
+    </div>
   </div>
 }

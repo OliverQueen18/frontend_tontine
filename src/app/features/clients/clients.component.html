@@ -164,6 +164,20 @@
               <label>Profession
                 <input [(ngModel)]="form.profession" name="profession" />
               </label>
+              @if (smsDisponible) {
+                <label class="span-2 checkbox-inline">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="form.smsNotificationsEnabled"
+                    name="smsNotificationsEnabled"
+                    [disabled]="smsAgenceTous"
+                  />
+                  Notifications SMS
+                  @if (smsAgenceTous) {
+                    <small class="hint"> (déjà activé pour toute l'agence)</small>
+                  }
+                </label>
+              }
             </section>
 
             <section class="client-form-section">
@@ -373,6 +387,20 @@
         <label>Frais d'adhésion
           <input type="number" [(ngModel)]="editForm.fraisAdhesion" name="editFrais" />
         </label>
+        @if (smsDisponible) {
+          <label class="full-width checkbox-inline">
+            <input
+              type="checkbox"
+              [(ngModel)]="editForm.smsNotificationsEnabled"
+              name="editSms"
+              [disabled]="smsAgenceTous"
+            />
+            Notifications SMS
+            @if (smsAgenceTous) {
+              <small class="hint"> (déjà activé pour toute l'agence)</small>
+            }
+          </label>
+        }
         <div class="modal-actions full-width">
           <button type="button" class="btn btn-secondary" (click)="showEdit=false">Annuler</button>
           <button class="btn btn-primary" type="submit">Enregistrer</button>

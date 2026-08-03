@@ -181,9 +181,31 @@
 
         <form (ngSubmit)="verifyOtp()" class="forgot-form">
 
-          @if (maskedEmail) {
+          @if (maskedEmail || maskedPhone) {
 
-            <p class="hint">Code envoyé à <strong>{{ maskedEmail }}</strong></p>
+            <p class="hint">
+
+              Code envoyé
+
+              @if (maskedEmail) {
+
+                par e-mail à <strong>{{ maskedEmail }}</strong>
+
+              }
+
+              @if (maskedEmail && maskedPhone) {
+
+                et
+
+              }
+
+              @if (maskedPhone) {
+
+                par SMS à <strong>{{ maskedPhone }}</strong>
+
+              }
+
+            </p>
 
           }
 

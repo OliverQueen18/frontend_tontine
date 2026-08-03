@@ -75,6 +75,8 @@ export class LoginComponent {
 
   maskedEmail = '';
 
+  maskedPhone = '';
+
   otpCountdown = signal(0);
 
   private countdownTimer?: ReturnType<typeof setInterval>;
@@ -155,6 +157,10 @@ export class LoginComponent {
 
     this.resetToken = '';
 
+    this.maskedEmail = '';
+
+    this.maskedPhone = '';
+
     this.error.set('');
 
     this.success.set('');
@@ -200,6 +206,8 @@ export class LoginComponent {
         this.loading.set(false);
 
         this.maskedEmail = res.maskedEmail || '';
+
+        this.maskedPhone = res.smsSent ? (res.maskedPhone || '') : '';
 
         this.success.set(res.message);
 

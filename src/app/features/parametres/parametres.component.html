@@ -69,6 +69,27 @@
         </div>
         <small class="hint">Affiché sur les reçus envoyés à vos clients.</small>
       </label>
+      <div class="full-width sms-agence-block">
+        <h4>Notifications SMS</h4>
+        @if (!agenceForm.smsPlateformeActive) {
+          <p class="hint">Les SMS sont désactivés au niveau plateforme. Contactez le super administrateur.</p>
+        } @else if (!agenceForm.smsGatewayReady) {
+          <p class="hint">La passerelle SMS n'est pas configurée côté serveur.</p>
+        } @else {
+          <label class="checkbox-row">
+            <input
+              type="checkbox"
+              [(ngModel)]="agenceForm.smsPourTousClients"
+              name="smsPourTousClients"
+            />
+            Activer les SMS pour tous les clients de l'agence
+          </label>
+          <small class="hint">
+            Sinon, activez le SMS individuellement sur la fiche de chaque client.
+            Les clients reçoivent un SMS lors des collectes signées et des restitutions.
+          </small>
+        }
+      </div>
       <div class="full-width">
         <button type="submit" class="btn btn-primary" [disabled]="savingAgence()">
           {{ savingAgence() ? 'Enregistrement...' : 'Enregistrer l\'agence' }}
@@ -113,6 +134,26 @@
         </div>
         <small class="hint">Appliqué aux nouvelles agences. Calculé sur le montant des opérations d'entrée.</small>
       </label>
+      <div class="full-width sms-platform-block">
+        <h4>Notifications SMS</h4>
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            [(ngModel)]="platformSettings.smsNotificationsEnabled"
+            name="smsNotificationsEnabled"
+            [disabled]="!platformSettings.smsGatewayReady && !platformSettings.smsNotificationsEnabled"
+          />
+          Activer les notifications SMS sur la plateforme
+        </label>
+        @if (platformSettings.smsGatewayReady) {
+          <small class="hint">Passerelle SMS prête. Les agences pourront ensuite activer le SMS pour leurs clients.</small>
+        } @else {
+          <small class="hint">
+            Passerelle non configurée. Définir <code>SMS_GATEWAY_ENABLED=true</code> et
+            <code>SMS_GATEWAY_API_KEY</code> (même passerelle que eRDV), puis redémarrer le backend.
+          </small>
+        }
+      </div>
       <p class="hint full-width">
         Ce numéro et le montant s'affichent sur le formulaire public « Devenez collecteur ».
         Les conditions d'utilisation se modifient dans <strong>Site web → Devenez collecteur</strong>.

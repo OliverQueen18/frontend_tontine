@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, from, map, of, switchMap, tap } from 'rxjs';
+import { Observable, catchError, from, map, of, switchMap, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   DEFAULT_SITE_CONTENT,
@@ -8,6 +8,7 @@ import {
   SiteSectionDto,
 } from '../models/site-content.model';
 import { ImageCompressService } from './image-compress.service';
+import { formatUploadError } from '../utils/upload-error.util';
 
 @Injectable({ providedIn: 'root' })
 export class SiteContentService {
@@ -62,7 +63,11 @@ export class SiteContentService {
         const form = new FormData();
         form.append('file', compressed, compressed.name);
         return this.http.post<{ url: string }>(`${environment.apiUrl}/admin/media/upload`, form);
-      })
+      }),
+      catchError(err => throwError(() => ({
+        status: (err as { status?: number })?.status,
+        error: { message: formatUploadError(err) }
+      })))
     );
   }
 

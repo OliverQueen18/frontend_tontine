@@ -1,0 +1,100 @@
+<div #receiptRoot class="caisse-receipt">
+  <header class="head">
+    <div>
+      <p class="brand-name">Tontine Marché</p>
+      <p class="brand-sub">{{ caisse.agenceNom || 'Agence' }}</p>
+      @if (caisse.agenceTelephone || caisse.agenceVille) {
+        <p class="brand-sub">
+          {{ caisse.agenceTelephone || '' }}
+          @if (caisse.agenceTelephone && caisse.agenceVille) { · }
+          {{ caisse.agenceVille || '' }}
+        </p>
+      }
+    </div>
+    <span class="doc-title">Arrêté de caisse</span>
+  </header>
+
+  <div class="meta">
+    <div>
+      <span>Date de caisse</span>
+      <strong>{{ caisse.dateCaisse | date:'dd/MM/yyyy' }}</strong>
+    </div>
+    <div>
+      <span>Statut</span>
+      <strong>{{ caisse.statut === 'CLOTUREE' ? 'Clôturée' : 'Ouverte' }}</strong>
+    </div>
+    <div>
+      <span>Ouverture</span>
+      <strong>{{ caisse.dateOuverture ? (caisse.dateOuverture | date:'dd/MM/yyyy HH:mm') : '—' }}</strong>
+    </div>
+    <div>
+      <span>Ouverte par</span>
+      <strong>{{ caisse.ouvertParNom || '—' }}</strong>
+    </div>
+    <div>
+      <span>Clôture</span>
+      <strong>{{ caisse.dateCloture ? (caisse.dateCloture | date:'dd/MM/yyyy HH:mm') : '—' }}</strong>
+    </div>
+    <div>
+      <span>Clôturée par</span>
+      <strong>{{ caisse.clotureParNom || '—' }}</strong>
+    </div>
+  </div>
+
+  <div class="kpi">
+    <div><span>Solde initial</span><strong>{{ caisse.soldeInitial | fcfa }}</strong></div>
+    <div><span>Total entrées</span><strong>{{ caisse.totalEntrees | fcfa }}</strong></div>
+    <div><span>Total sorties</span><strong>{{ caisse.totalSorties | fcfa }}</strong></div>
+    <div><span>Solde théorique</span><strong>{{ caisse.soldeTheorique | fcfa }}</strong></div>
+    @if (caisse.statut === 'CLOTUREE') {
+      <div><span>Solde réel</span><strong>{{ caisse.soldeReel | fcfa }}</strong></div>
+      <div [class.warn]="(caisse.ecart || 0) !== 0">
+        <span>Écart</span><strong>{{ caisse.ecart | fcfa }}</strong>
+      </div>
+    }
+    <div class="hl">
+      <span>Situation</span>
+      <strong>{{ caisse.statut === 'CLOTUREE' ? (caisse.soldeReel | fcfa) : (caisse.soldeTheorique | fcfa) }}</strong>
+    </div>
+  </div>
+
+  @if (caisse.observation) {
+    <p class="obs"><strong>Observation :</strong> {{ caisse.observation }}</p>
+  }
+
+  <table>
+    <thead>
+      <tr>
+        <th>Heure</th>
+        <th>Type</th>
+        <th>Catégorie</th>
+        <th>Libellé</th>
+        <th class="num">Montant</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of caisse.mouvements || []; track m.id) {
+        <tr>
+          <td>{{ m.dateHeure | date:'HH:mm' }}</td>
+          <td>{{ m.type }}</td>
+          <td>{{ m.categorie }}</td>
+          <td>{{ m.libelle }}{{ m.reference ? ' (' + m.reference + ')' : '' }}</td>
+          <td class="num">{{ m.montant | fcfa }}</td>
+        </tr>
+      } @empty {
+        <tr><td colspan="5">Aucun mouvement</td></tr>
+      }
+    </tbody>
+  </table>
+
+  <div class="sign">
+    <div>
+      <p>Le caissier</p>
+      <div class="line">{{ caisse.clotureParNom || caisse.ouvertParNom || 'Signature' }}</div>
+    </div>
+    <div>
+      <p>Le responsable d'agence</p>
+      <div class="line">Signature</div>
+    </div>
+  </div>
+</div>

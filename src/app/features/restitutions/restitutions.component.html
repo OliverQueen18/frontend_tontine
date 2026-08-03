@@ -34,6 +34,17 @@
 
 }
 
+@if (caisseBloquee) {
+  <div class="alert alert-warning">
+    {{ caisseOuverte.messageBlocage }}
+    @if (caisseOuverte.canOpenCaisse) {
+      <a routerLink="/app/caisse" class="alert-link">
+        {{ caisseOuverte.hasAnterieuresOuvertes ? ' Clôturer les caisses antérieures' : ' Ouvrir la caisse' }}
+      </a>
+    }
+  </div>
+}
+
 
 
 @if (isCollecteur && enAttente().length) {

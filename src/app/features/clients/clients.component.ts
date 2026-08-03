@@ -50,6 +50,10 @@ export class ClientsComponent implements OnInit {
 
   phoneValid = false;
   phoneSecondaireValid = true;
+  /** SMS disponibles (plateforme + passerelle). */
+  smsDisponible = false;
+  /** L'agence envoie déjà le SMS à tous ses clients. */
+  smsAgenceTous = false;
 
   message = signal('');
 
@@ -71,6 +75,34 @@ export class ClientsComponent implements OnInit {
       }
     });
     this.loadMarches();
+    this.loadSmsContext();
+  }
+
+  loadSmsContext(): void {
+    const agenceId = this.auth.agenceId();
+    if (agenceId) {
+      this.api.getAgence(agenceId).subscribe({
+        next: a => {
+          this.smsDisponible = !!a.smsPlateformeActive && !!a.smsGatewayReady;
+          this.smsAgenceTous = !!a.smsPourTousClients;
+        },
+        error: () => {
+          this.smsDisponible = false;
+          this.smsAgenceTous = false;
+        }
+      });
+      return;
+    }
+    if (this.auth.hasRole('SUPER_ADMIN')) {
+      this.api.getPlatformSettings().subscribe({
+        next: s => {
+          this.smsDisponible = !!s.smsNotificationsEnabled && !!s.smsGatewayReady;
+        },
+        error: () => {
+          this.smsDisponible = false;
+        }
+      });
+    }
   }
 
   loadMarches(): void {
@@ -430,7 +462,8 @@ export class ClientsComponent implements OnInit {
       montantJournalier: 1000,
       fraisAdhesion: 500,
       dateAdhesion: today,
-      photoUrl: ''
+      photoUrl: '',
+      smsNotificationsEnabled: this.smsAgenceTous
     };
   }
 }

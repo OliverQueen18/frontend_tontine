@@ -262,7 +262,7 @@
               </label>
 
               @if (otpSent() && !emailVerified()) {
-                <label>Code OTP reçu par e-mail *
+                <label>Code OTP reçu par e-mail / SMS *
                   <div class="otp-row">
                     <input [(ngModel)]="otpCode" name="otpCode" maxlength="6" placeholder="6 chiffres" inputmode="numeric" autocomplete="one-time-code" />
                     <button type="button" class="btn btn-primary btn-sm" (click)="verifierOtp()" [disabled]="verifyingOtp()">
