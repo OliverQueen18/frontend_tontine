@@ -235,8 +235,9 @@ export class CaisseComponent implements OnInit {
     const c = this.caisse();
     if (!c?.id) return;
     if (!confirm(
-      `Supprimer définitivement la caisse du ${c.dateCaisse} ?\n`
-      + 'Possible uniquement s\'il n\'y a pas de mouvements métier (collectes, restitutions…).'
+      `Supprimer définitivement la caisse du ${c.dateCaisse} ?\n\n`
+      + 'Le journal de caisse sera effacé et les soldes des jours suivants seront recalculés.\n'
+      + 'Les collectes/restitutions déjà enregistrées ne seront PAS annulées.'
     )) {
       return;
     }
@@ -247,9 +248,11 @@ export class CaisseComponent implements OnInit {
         this.refreshControleEtJour();
         if (this.mode === 'periode') {
           this.loadHistorique();
+        } else {
+          this.loadJour();
         }
       },
-      error: err => this.message.set(err?.error?.message || 'Erreur')
+      error: err => this.message.set(err?.error?.message || 'Erreur lors de la suppression')
     });
   }
 

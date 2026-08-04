@@ -33,7 +33,7 @@ export class DepensesComponent implements OnInit {
   }
 
   get caisseBloquee(): boolean {
-    return this.caisseOuverte.ouverte() === false;
+    return this.caisseOuverte.isBlocked();
   }
 
   ngOnInit(): void {

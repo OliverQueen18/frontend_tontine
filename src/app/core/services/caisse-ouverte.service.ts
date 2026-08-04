@@ -8,19 +8,19 @@ import { Caisse, CaisseControle } from '../models/models';
 /** Vérifie que la caisse du jour est ouverte et qu'aucune caisse antérieure n'est ouverte. */
 @Injectable({ providedIn: 'root' })
 export class CaisseOuverteService {
-  /** true = peut opérer, false = bloqué, null = non vérifié / N/A (ex. SUPER_ADMIN sans agence). */
+  /** true = peut opérer, false = bloqué, null = en attente de vérification. */
   readonly ouverte = signal<boolean | null>(null);
   readonly controle = signal<CaisseControle | null>(null);
 
   constructor(private api: ApiService, private auth: AuthService) {}
 
+  /** Vérifie si les opérations caisse sont autorisées pour l'agence donnée. */
   check(agenceId?: number | null): Observable<boolean> {
     const id = agenceId ?? this.auth.agenceId();
     if (id == null) {
-      // SUPER_ADMIN multi-agences : le backend valide à l'opération
       this.ouverte.set(null);
       this.controle.set(null);
-      return of(true);
+      return of(false);
     }
     return this.api.getCaisseControle(id).pipe(
       map(c => {
@@ -34,6 +34,11 @@ export class CaisseOuverteService {
         return of(false);
       })
     );
+  }
+
+  /** true tant que la caisse n'est pas confirmée ouverte pour l'agence. */
+  isBlocked(): boolean {
+    return this.ouverte() !== true;
   }
 
   get canOpenCaisse(): boolean {

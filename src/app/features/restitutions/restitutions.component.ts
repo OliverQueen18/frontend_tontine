@@ -57,7 +57,7 @@ export class RestitutionsComponent implements OnInit {
   }
 
   get caisseBloquee(): boolean {
-    return this.caisseOuverte.ouverte() === false;
+    return this.caisseOuverte.isBlocked();
   }
 
   ngOnInit(): void {

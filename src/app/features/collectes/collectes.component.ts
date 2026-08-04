@@ -36,6 +36,7 @@ export class CollectesComponent implements OnInit {
   /** Collecte historique en cours de signature (null = nouvelle collecte). */
   signingExisting: Collecte | null = null;
   message = signal('');
+  messageKind = signal<'success' | 'error' | 'warning'>('success');
   mode: 'assistant' | 'historique' = 'assistant';
 
   filterQ = signal('');
@@ -65,11 +66,11 @@ export class CollectesComponent implements OnInit {
   }
 
   get caisseBloquee(): boolean {
-    return this.caisseOuverte.ouverte() === false;
+    return this.caisseOuverte.isBlocked();
   }
 
   ngOnInit(): void {
-    this.caisseOuverte.check();
+    this.refreshCaisseCheck();
     if (this.canFilterAgents) {
       this.mode = 'historique';
     }
@@ -97,8 +98,44 @@ export class CollectesComponent implements OnInit {
   }
 
   onAgentFilterChange(): void {
+    this.refreshCaisseCheck();
     this.loadPortefeuille();
     this.loadHistorique();
+  }
+
+  private resolveAgenceIdForCaisse(item?: Collecte | null): number | null {
+    if (item?.agenceId != null) return item.agenceId;
+    const authAgence = this.auth.agenceId();
+    if (authAgence != null) return authAgence;
+    if (this.agentId != null) {
+      return this.agents().find(a => a.id === this.agentId)?.agenceId ?? null;
+    }
+    return null;
+  }
+
+  refreshCaisseCheck(item?: Collecte | null): void {
+    this.caisseOuverte.check(this.resolveAgenceIdForCaisse(item));
+  }
+
+  private notify(text: string, kind: 'success' | 'error' | 'warning' = 'success'): void {
+    this.message.set(text);
+    this.messageKind.set(kind);
+  }
+
+  private ensureCaisseOuverte(item?: Collecte | null): Promise<boolean> {
+    const agenceId = this.resolveAgenceIdForCaisse(item);
+    if (agenceId == null) {
+      this.notify('Sélectionnez un agent pour vérifier la caisse de l\'agence.', 'warning');
+      return Promise.resolve(false);
+    }
+    return new Promise(resolve => {
+      this.caisseOuverte.check(agenceId).subscribe(ok => {
+        if (!ok) {
+          this.notify(this.caisseOuverte.messageBlocage, 'error');
+        }
+        resolve(ok);
+      });
+    });
   }
 
   loadPortefeuille(): void {
@@ -130,11 +167,8 @@ export class CollectesComponent implements OnInit {
     return this.selected?.clientId === item.clientId && this.showCollecteForm;
   }
 
-  startCollecte(item: Collecte): void {
-    if (this.caisseBloquee) {
-      this.message.set(this.caisseOuverte.messageBlocage);
-      return;
-    }
+  async startCollecte(item: Collecte): Promise<void> {
+    if (!(await this.ensureCaisseOuverte(item))) return;
     this.selected = item;
     this.nombreJours = 1;
     this.syncFrom = 'jours';
@@ -144,11 +178,8 @@ export class CollectesComponent implements OnInit {
     this.showQrScanner = false;
   }
 
-  openQrScanner(): void {
-    if (this.caisseBloquee) {
-      this.message.set(this.caisseOuverte.messageBlocage);
-      return;
-    }
+  async openQrScanner(): Promise<void> {
+    if (!(await this.ensureCaisseOuverte())) return;
     this.showQrScanner = true;
   }
 
@@ -161,11 +192,11 @@ export class CollectesComponent implements OnInit {
     const code = this.extractClientCode(raw);
     const item = this.findClientByCode(code);
     if (!item) {
-      this.message.set(`Aucun client « ${code} » dans ce portefeuille`);
+      this.notify(`Aucun client « ${code} » dans ce portefeuille`, 'warning');
       return;
     }
     this.startCollecte(item);
-    this.message.set(`Client trouvé : ${item.clientNom}`);
+    this.notify(`Client trouvé : ${item.clientNom}`);
   }
 
   private extractClientCode(raw: string): string {
@@ -236,7 +267,7 @@ export class CollectesComponent implements OnInit {
 
   confirmCollecteForm(): void {
     if (this.montantRecu <= 0 || this.nombreJours <= 0) {
-      this.message.set('Montant ou nombre de jours invalide');
+      this.notify('Montant ou nombre de jours invalide', 'error');
       return;
     }
     this.showCollecteForm = false;
@@ -274,12 +305,9 @@ export class CollectesComponent implements OnInit {
     this.showSignature = true;
   }
 
-  annulerHistorique(c: Collecte): void {
+  async annulerHistorique(c: Collecte): Promise<void> {
     if (!c.id || c.annulee) return;
-    if (this.caisseBloquee) {
-      this.message.set(this.caisseOuverte.messageBlocage);
-      return;
-    }
+    if (!(await this.ensureCaisseOuverte(c))) return;
     const ok = confirm(
       `Annuler la collecte ${c.numeroRecu} (${c.montantRecu} FCFA) pour ${c.clientNom} ?\n` +
       `Le montant sera retiré du solde du client.`
@@ -287,11 +315,11 @@ export class CollectesComponent implements OnInit {
     if (!ok) return;
     this.api.annulerCollecte(c.id).subscribe({
       next: () => {
-        this.message.set(`Collecte ${c.numeroRecu} annulée`);
+        this.notify(`Collecte ${c.numeroRecu} annulée`);
         this.loadPortefeuille();
         this.loadHistorique();
       },
-      error: err => this.message.set(err?.error?.message || 'Erreur lors de l\'annulation')
+      error: err => this.notify(err?.error?.message || 'Erreur lors de l\'annulation', 'error')
     });
   }
 
@@ -300,8 +328,9 @@ export class CollectesComponent implements OnInit {
     return this.cms.resolveMediaUrl(url);
   }
 
-  onSigned(signature: string): void {
+  async onSigned(signature: string): Promise<void> {
     if (!this.selected) return;
+    if (!(await this.ensureCaisseOuverte(this.selected))) return;
 
     if (this.signingExisting?.id) {
       this.api.signerCollecte(this.signingExisting.id, signature).subscribe({
@@ -309,10 +338,10 @@ export class CollectesComponent implements OnInit {
           this.showSignature = false;
           this.signingExisting = null;
           this.selected = null;
-          this.message.set(`Signature enregistrée — reçu ${c.numeroRecu}`);
+          this.notify(`Signature enregistrée — reçu ${c.numeroRecu}`);
           this.loadHistorique();
         },
-        error: err => this.message.set(err?.error?.message || 'Erreur lors de la signature')
+        error: err => this.notify(err?.error?.message || 'Erreur lors de la signature', 'error')
       });
       return;
     }
@@ -327,11 +356,11 @@ export class CollectesComponent implements OnInit {
       next: (c) => {
         this.showSignature = false;
         this.selected = null;
-        this.message.set(`Collecte validée — reçu ${c.numeroRecu} (${this.nombreJours} j)`);
+        this.notify(`Collecte validée — reçu ${c.numeroRecu} (${this.nombreJours} j)`);
         this.loadPortefeuille();
         this.loadHistorique();
       },
-      error: err => this.message.set(err?.error?.message || 'Erreur lors de la collecte')
+      error: err => this.notify(err?.error?.message || 'Erreur lors de la collecte', 'error')
     });
   }
 }

@@ -3,12 +3,15 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
+ARG BUILD_CONFIGURATION=production
+ARG NODE_OPTIONS=--max-old-space-size=4096
+ENV NODE_OPTIONS=${NODE_OPTIONS}
+
 COPY package*.json ./
 RUN npm ci
 
 COPY . .
 
-ARG BUILD_CONFIGURATION=docker
 RUN npm run build:${BUILD_CONFIGURATION}
 
 ###############################################################

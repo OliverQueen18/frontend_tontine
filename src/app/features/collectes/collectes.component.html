@@ -15,7 +15,9 @@
 </div>
 
 @if (message()) {
-  <div class="alert alert-success">{{ message() }}</div>
+  <div class="alert" [class.alert-success]="messageKind() === 'success'" [class.alert-warning]="messageKind() === 'warning'" [class.alert-error]="messageKind() === 'error'">
+    {{ message() }}
+  </div>
 }
 
 @if (caisseBloquee) {
@@ -87,11 +89,12 @@
         <article
           class="client-card"
           [class.client-card--active]="isSelected(item)"
+          [class.client-card--disabled]="caisseBloquee"
           role="button"
           tabindex="0"
-          (click)="startCollecte(item)"
-          (keydown.enter)="startCollecte(item)"
-          (keydown.space)="$event.preventDefault(); startCollecte(item)"
+          (click)="!caisseBloquee && startCollecte(item)"
+          (keydown.enter)="!caisseBloquee && startCollecte(item)"
+          (keydown.space)="$event.preventDefault(); !caisseBloquee && startCollecte(item)"
         >
           <div class="client-card__photo">
             @if (item.clientPhotoUrl) {

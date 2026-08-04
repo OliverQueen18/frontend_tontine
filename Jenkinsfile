@@ -5,13 +5,15 @@ pipeline {
     options {
         timestamps()
         disableConcurrentBuilds()
+        // Build Angular + Docker : prévoir au moins 20 min sur petits serveurs
+        timeout(time: 45, unit: 'MINUTES')
     }
 
     parameters {
         choice(
             name: 'BUILD_CONFIGURATION',
-            choices: ['docker', 'production', 'development'],
-            description: 'Configuration Angular (docker recommande pour l\'image CI)'
+            choices: ['production', 'development'],
+            description: 'Configuration Angular (production pour déploiement)'
         )
 
         string(
@@ -37,6 +39,8 @@ pipeline {
         APP_NAME     = 'frontend-tontine'
         DOCKER_IMAGE = 'oliverqueen18/frontend-tontine'
         DOCKER_TAG   = "${BUILD_NUMBER}"
+        // Limite mémoire Node pendant ng build (évite OOM sur Jenkins)
+        NODE_OPTIONS = '--max-old-space-size=4096'
     }
 
     stages {
@@ -47,23 +51,13 @@ pipeline {
             }
         }
 
-        stage('Install dependencies') {
-            steps {
-                sh 'npm ci'
-            }
-        }
-
-        stage('Build Angular') {
-            steps {
-                sh "npm run build:${params.BUILD_CONFIGURATION}"
-            }
-        }
-
+        // Build uniquement dans Docker (évite npm ci + ng build en double sur l'agent Jenkins)
         stage('Docker Build') {
             steps {
                 sh """
                 docker build \
                   --build-arg BUILD_CONFIGURATION=${params.BUILD_CONFIGURATION} \
+                  --build-arg NODE_OPTIONS="${NODE_OPTIONS}" \
                   -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
                   -t ${DOCKER_IMAGE}:latest \
                   .
@@ -96,7 +90,7 @@ pipeline {
             echo "Pipeline TONTINE frontend reussi (${DOCKER_IMAGE}:${DOCKER_TAG})"
         }
         failure {
-            echo 'Pipeline TONTINE frontend echoue'
+            echo 'Pipeline TONTINE frontend echoue — relancer le job si Jenkins a redémarré pendant le build'
         }
         always {
             cleanWs()
