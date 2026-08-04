@@ -5,7 +5,6 @@ pipeline {
     options {
         timestamps()
         disableConcurrentBuilds()
-        // Build Angular + Docker : prévoir au moins 20 min sur petits serveurs
         timeout(time: 45, unit: 'MINUTES')
     }
 
@@ -28,6 +27,13 @@ pipeline {
             description: 'Port du backend pour le proxy Nginx'
         )
 
+        // Critique sur VPS 2–4 Go : 4096 Mo faisait planter le serveur
+        string(
+            name: 'NODE_HEAP_MB',
+            defaultValue: '1536',
+            description: 'Mémoire max Node (Mo) pour ng build. Passer à 1024 si OOM / plantage.'
+        )
+
         booleanParam(
             name: 'PUSH_DOCKER',
             defaultValue: true,
@@ -39,8 +45,7 @@ pipeline {
         APP_NAME     = 'frontend-tontine'
         DOCKER_IMAGE = 'oliverqueen18/frontend-tontine'
         DOCKER_TAG   = "${BUILD_NUMBER}"
-        // Limite mémoire Node pendant ng build (évite OOM sur Jenkins)
-        NODE_OPTIONS = '--max-old-space-size=4096'
+        NODE_OPTIONS = "--max-old-space-size=${params.NODE_HEAP_MB}"
     }
 
     stages {
@@ -51,10 +56,11 @@ pipeline {
             }
         }
 
-        // Build uniquement dans Docker (évite npm ci + ng build en double sur l'agent Jenkins)
         stage('Docker Build') {
             steps {
                 sh """
+                set -e
+                echo "Build léger : heap Node=${params.NODE_HEAP_MB} Mo, 1 worker Angular"
                 docker build \
                   --build-arg BUILD_CONFIGURATION=${params.BUILD_CONFIGURATION} \
                   --build-arg NODE_OPTIONS="${NODE_OPTIONS}" \
@@ -90,9 +96,13 @@ pipeline {
             echo "Pipeline TONTINE frontend reussi (${DOCKER_IMAGE}:${DOCKER_TAG})"
         }
         failure {
-            echo 'Pipeline TONTINE frontend echoue — relancer le job si Jenkins a redémarré pendant le build'
+            echo 'Echec — si le serveur plante (OOM), relancer avec NODE_HEAP_MB=1024'
         }
         always {
+            sh '''
+            docker image prune -f || true
+            docker builder prune -f --filter until=24h || true
+            '''
             cleanWs()
         }
     }

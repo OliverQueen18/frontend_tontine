@@ -1,18 +1,27 @@
-# Stage 1: Build Angular app
+# Stage 1: Build Angular (empreinte mémoire limitée pour petits serveurs CI)
 FROM node:20-alpine AS build
 
 WORKDIR /app
 
+# Défaut volontairement bas : un heap Node à 4 Go fait planter les VPS 2–4 Go
 ARG BUILD_CONFIGURATION=production
-ARG NODE_OPTIONS=--max-old-space-size=4096
+ARG NODE_OPTIONS=--max-old-space-size=1536
 ENV NODE_OPTIONS=${NODE_OPTIONS}
+ENV NG_BUILD_MAX_WORKERS=1
+ENV npm_config_fund=false
+ENV npm_config_audit=false
+ENV npm_config_progress=false
 
-COPY package*.json ./
-RUN npm ci
+COPY package.json package-lock.json ./
+RUN npm ci --no-fund --no-audit
 
 COPY . .
 
+# Un seul worker esbuild/angular → moins de pics RAM
 RUN npm run build:${BUILD_CONFIGURATION}
+
+# Nettoyage avant le stage suivant (réduit le poids de la couche build)
+RUN rm -rf node_modules .angular
 
 ###############################################################
 
