@@ -9,6 +9,17 @@ server {
 
     client_max_body_size 50M;
 
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    # Assets hashés Angular : cache long (noms uniques par build)
+    location ~* \.(?:css|js|mjs|map|woff2?|ttf|eot|png|jpe?g|gif|svg|ico|webp|json|txt|webmanifest)$ {
+        try_files $uri =404;
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        access_log off;
+    }
+
     location /api/ {
 
         proxy_pass http://${BACKEND_HOST}:${BACKEND_PORT}/api/;
@@ -19,22 +30,25 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        # Certains reverse-proxies amont omettent Authorization : on le force.
         proxy_set_header Authorization $http_authorization;
         proxy_pass_request_headers on;
 
         # Requêtes same-origin via le proxy : évite le rejet CORS côté Spring
-        # quand CORS_ORIGINS n'est pas encore aligné sur le domaine public.
         proxy_set_header Origin "";
 
         proxy_read_timeout 120s;
 
     }
 
+    # index.html / routes SPA : jamais en cache (évite chunks obsolètes après déploiement)
     location / {
-
         try_files $uri $uri/ /index.html;
-
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires "0";
     }
 
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
+    gzip_min_length 256;
 }
