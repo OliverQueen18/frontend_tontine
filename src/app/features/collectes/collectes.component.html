@@ -22,11 +22,20 @@
 
 @if (caisseBloquee) {
   <div class="alert alert-warning">
-    {{ caisseOuverte.messageBlocage }}
+    <strong>Collectes bloquées :</strong> {{ caisseOuverte.messageBlocage }}
+    @if (caisseOuverte.hasAnterieuresOuvertes) {
+      <ul style="margin:0.5rem 0 0; padding-left:1.25rem">
+        @for (a of caisseOuverte.caissesAnterieuresOuvertes; track a.id) {
+          <li>Caisse encore ouverte du {{ a.dateCaisse | date:'dd/MM/yyyy' }}</li>
+        }
+      </ul>
+    }
     @if (caisseOuverte.canOpenCaisse) {
-      <a routerLink="/app/caisse" class="alert-link">
-        {{ caisseOuverte.hasAnterieuresOuvertes ? ' Clôturer les caisses antérieures' : ' Ouvrir la caisse' }}
-      </a>
+      <div style="margin-top:0.5rem">
+        <a routerLink="/app/caisse" class="alert-link">
+          {{ caisseOuverte.hasAnterieuresOuvertes ? 'Aller clôturer / supprimer les caisses antérieures' : 'Aller au menu Caisse' }}
+        </a>
+      </div>
     }
   </div>
 }

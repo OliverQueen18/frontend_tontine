@@ -18,27 +18,38 @@ export class CaisseOuverteService {
   check(agenceId?: number | null): Observable<boolean> {
     const id = agenceId ?? this.auth.agenceId();
     if (id == null) {
+      // Pas d'agence connue : ne pas bloquer définitivement (SUPER_ADMIN multi-agences).
+      // La vérification se fera avec l'agence du client au moment de l'opération.
       this.ouverte.set(null);
       this.controle.set(null);
-      return of(false);
+      return of(true);
     }
+    this.ouverte.set(null);
     return this.api.getCaisseControle(id).pipe(
       map(c => {
         this.controle.set(c);
         return !!c.peutOperer;
       }),
       tap(ok => this.ouverte.set(ok)),
-      catchError(() => {
+      catchError((err) => {
         this.ouverte.set(false);
-        this.controle.set(null);
+        this.controle.set({
+          peutOperer: false,
+          message: err?.error?.message || "Impossible de vérifier la caisse. Réessayez."
+        });
         return of(false);
       })
     );
   }
 
-  /** true tant que la caisse n'est pas confirmée ouverte pour l'agence. */
+  /** true seulement quand le contrôle a confirmé que les opérations sont bloquées. */
   isBlocked(): boolean {
-    return this.ouverte() !== true;
+    return this.ouverte() === false;
+  }
+
+  /** Contrôle encore en cours (ou agence non résolue). */
+  isPending(): boolean {
+    return this.ouverte() === null;
   }
 
   get canOpenCaisse(): boolean {

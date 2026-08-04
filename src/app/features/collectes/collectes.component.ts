@@ -69,6 +69,10 @@ export class CollectesComponent implements OnInit {
     return this.caisseOuverte.isBlocked();
   }
 
+  get caissePending(): boolean {
+    return this.caisseOuverte.isPending();
+  }
+
   ngOnInit(): void {
     this.refreshCaisseCheck();
     if (this.canFilterAgents) {
