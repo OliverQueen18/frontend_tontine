@@ -2,6 +2,7 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
 import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
 import { SiteContentService } from '../../core/services/site-content.service';
 import { Agence, StatutEntity } from '../../core/models/models';
 import { GrilleCommissionEditorComponent } from '../../shared/components/grille-commission-editor/grille-commission-editor.component';
@@ -46,7 +47,15 @@ export class AgencesComponent implements OnInit {
     });
   });
 
-  constructor(private api: ApiService, public cms: SiteContentService) {}
+  constructor(
+    private api: ApiService,
+    public cms: SiteContentService,
+    public auth: AuthService
+  ) {}
+
+  get canDeleteAgence(): boolean {
+    return this.auth.hasRole('SUPER_ADMIN');
+  }
 
   ngOnInit(): void {
     this.load();
@@ -156,11 +165,16 @@ export class AgencesComponent implements OnInit {
   }
 
   supprimer(a: Agence): void {
-    if (!a.id) return;
+    if (!a.id || !this.canDeleteAgence) return;
     const ok = confirm(
       `Supprimer définitivement l'agence « ${a.nom} » ?\n\n` +
-      `Cette action est irréversible et effacera tous les agents, clients, collectes, ` +
-      `restitutions, dépenses, caisses et utilisateurs liés à cette agence.`
+      `ATTENTION — suppression en cascade :\n` +
+      `• utilisateurs, agents, clients\n` +
+      `• collectes, restitutions, dépenses\n` +
+      `• caisses et mouvements\n` +
+      `• marchés, quartiers, grilles de commission\n` +
+      `• historiques, notifications, audits liés\n\n` +
+      `Cette action est irréversible.`
     );
     if (!ok) return;
     const confirmCode = prompt(`Pour confirmer, saisissez le code agence : ${a.code}`);
@@ -171,10 +185,10 @@ export class AgencesComponent implements OnInit {
     this.api.supprimerAgence(a.id).subscribe({
       next: () => {
         this.closeDetail();
-        this.message.set('Agence supprimée définitivement');
+        this.message.set(`Agence « ${a.nom} » et toutes ses données ont été supprimées`);
         this.load();
       },
-      error: err => this.message.set(err?.error?.message || 'Erreur lors de la suppression')
+      error: err => this.message.set(err?.error?.message || 'Erreur lors de la suppression cascade')
     });
   }
 

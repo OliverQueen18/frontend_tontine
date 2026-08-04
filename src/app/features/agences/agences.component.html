@@ -173,9 +173,11 @@
             <i class="pi pi-ban"></i> Désactiver
           </button>
         }
-        <button type="button" class="btn btn-danger" (click)="supprimer(selected)">
-          <i class="pi pi-trash"></i> Supprimer
-        </button>
+        @if (canDeleteAgence) {
+          <button type="button" class="btn btn-danger" (click)="supprimer(selected)">
+            <i class="pi pi-trash"></i> Supprimer tout
+          </button>
+        }
       </footer>
     </div>
   </div>
