@@ -134,6 +134,11 @@
     place-items: center;
     font-size: 1.1rem;
     flex-shrink: 0;
+
+    &--edit {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
   }
 }
 

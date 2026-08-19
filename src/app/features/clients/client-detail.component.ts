@@ -8,7 +8,7 @@ import { ApiService } from '../../core/services/api.service';
 
 import { AuthService } from '../../core/services/auth.service';
 
-import { Client, ClientHistorique, Collecte } from '../../core/models/models';
+import { Agent, Client, ClientHistorique, Collecte, Marche } from '../../core/models/models';
 
 import { FcfaPipe } from '../../shared/pipes/fcfa.pipe';
 
@@ -17,6 +17,8 @@ import { QrCodeComponent } from '../../shared/components/qr-code/qr-code.compone
 import { PhoneDigitsComponent } from '../../shared/components/phone-digits/phone-digits.component';
 
 import { FcfaAmountInputComponent } from '../../shared/components/fcfa-amount-input/fcfa-amount-input.component';
+
+import { PhotoCaptureComponent } from '../../shared/components/photo-capture/photo-capture.component';
 
 import { SiteContentService } from '../../core/services/site-content.service';
 
@@ -30,7 +32,7 @@ import { DatePipe } from '@angular/common';
 
   standalone: true,
 
-  imports: [RouterLink, FormsModule, FcfaPipe, QrCodeComponent, PhoneDigitsComponent, FcfaAmountInputComponent, DatePipe],
+  imports: [RouterLink, FormsModule, FcfaPipe, QrCodeComponent, PhoneDigitsComponent, FcfaAmountInputComponent, PhotoCaptureComponent, DatePipe],
 
   template: `
 
@@ -81,6 +83,12 @@ import { DatePipe } from '@angular/common';
             @if (c.statut === 'ACTIF') {
 
               <button type="button" class="btn btn-secondary btn-sm" (click)="showDesactiver=true">Désactiver</button>
+
+            }
+
+            @if (c.statut === 'INACTIF' && canToggleStatut) {
+
+              <button type="button" class="btn btn-secondary btn-sm" (click)="showReactiver=true">Réactiver</button>
 
             }
 
@@ -254,57 +262,161 @@ import { DatePipe } from '@angular/common';
 
     @if (showEdit && editForm) {
 
-      <div class="modal-backdrop" (click)="showEdit=false">
+      <div class="modal-backdrop client-form-backdrop" (click)="showEdit=false">
 
-        <div class="modal modal-lg" (click)="$event.stopPropagation()">
+        <div class="client-form-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
 
-          <h3>Modifier le client</h3>
+          <header class="client-form-header">
 
-          <form (ngSubmit)="saveEdit()" class="form-grid">
+            <div class="client-form-header__title">
 
-            <label class="full-width">Nom complet *
+              <span class="client-form-header__icon"><i class="pi pi-user-edit"></i></span>
 
-              <input [(ngModel)]="editForm.nomComplet" name="detailEditNom" required />
+              <div>
 
-            </label>
+                <h3>Modifier le client</h3>
 
-            <label>Téléphone *
+                <p>{{ editForm.code }} · affectation, identité et adhésion</p>
 
-              <app-phone-digits [(ngModel)]="editForm.telephone" name="detailEditTel" [required]="true" />
+              </div>
 
-            </label>
+            </div>
 
-            <label>E-mail
+            <button type="button" class="btn-close" (click)="showEdit=false" aria-label="Fermer">
 
-              <input type="email" [(ngModel)]="editForm.email" name="detailEditEmail" />
+              <i class="pi pi-times"></i>
 
-            </label>
+            </button>
 
-            <label>Profession
+          </header>
 
-              <input [(ngModel)]="editForm.profession" name="detailEditProfession" />
+          <form (ngSubmit)="saveEdit()" class="client-form">
 
-            </label>
+            <div class="client-form-scroll">
 
-            <label class="full-width">Adresse
+              <div class="client-form-columns">
 
-              <input [(ngModel)]="editForm.adresse" name="detailEditAdresse" />
+                <section class="client-form-section client-form-section--stack">
 
-            </label>
+                  <h4><i class="pi pi-map-marker"></i> Affectation</h4>
 
-            <label>Montant journalier
+                  <label class="span-2">Marché *
 
-              <app-fcfa-amount-input [(ngModel)]="editForm.montantJournalier" name="detailEditMontant" ariaLabel="Montant journalier" />
+                    <select [(ngModel)]="editForm.marcheId" name="detailEditMarcheId" required>
 
-            </label>
+                      <option [ngValue]="undefined" disabled>Choisir un marché</option>
 
-            <div class="modal-actions full-width">
+                      @for (m of marches(); track m.id) {
+
+                        <option [ngValue]="m.id">{{ m.nom }}@if (m.code) { ({{ m.code }})}</option>
+
+                      }
+
+                    </select>
+
+                  </label>
+
+                  <label class="span-2">Agent collecteur *
+
+                    <select [(ngModel)]="editForm.agentId" name="detailEditAgentId" required [disabled]="auth.hasRole('AGENT')">
+
+                      <option [ngValue]="undefined" disabled>Choisir un agent</option>
+
+                      @for (a of agents(); track a.id) {
+
+                        <option [ngValue]="a.id">{{ a.nomComplet }}</option>
+
+                      }
+
+                    </select>
+
+                  </label>
+
+                  <h4 class="section-sub"><i class="pi pi-id-card"></i> Identité</h4>
+
+                  <label class="span-2">Prénom et Nom complet *
+
+                    <input [(ngModel)]="editForm.nomComplet" name="detailEditNom" required />
+
+                  </label>
+
+                  <label class="span-2">Téléphone * (8 chiffres)
+
+                    <app-phone-digits [(ngModel)]="editForm.telephone" name="detailEditTel" [required]="true" />
+
+                  </label>
+
+                  <label>E-mail
+
+                    <input type="email" [(ngModel)]="editForm.email" name="detailEditEmail" />
+
+                  </label>
+
+                  <label>Profession
+
+                    <input [(ngModel)]="editForm.profession" name="detailEditProfession" />
+
+                  </label>
+
+                </section>
+
+                <section class="client-form-section">
+
+                  <h4><i class="pi pi-address-book"></i> Compléments</h4>
+
+                  <div class="photo-section span-2">
+
+                    <span class="field-label">Photo du client</span>
+
+                    <app-photo-capture [photoUrl]="editForm.photoUrl" (photoUrlChange)="onEditPhotoChange($event)" />
+
+                  </div>
+
+                  <label class="span-2">Adresse du client
+
+                    <input [(ngModel)]="editForm.adresse" name="detailEditAdresse" />
+
+                  </label>
+
+                  <label>Personne à contacter
+
+                    <input [(ngModel)]="editForm.personneAContacter" name="detailEditContact" />
+
+                  </label>
+
+                  <label>N° tel. secondaire
+
+                    <app-phone-digits [(ngModel)]="editForm.telephoneSecondaire" name="detailEditTel2" [required]="false" />
+
+                  </label>
+
+                  <h4 class="section-sub"><i class="pi pi-wallet"></i> Adhésion</h4>
+
+                  <label>Montant journalier
+
+                    <app-fcfa-amount-input [(ngModel)]="editForm.montantJournalier" name="detailEditMontant" ariaLabel="Montant journalier" />
+
+                  </label>
+
+                  <label>Frais d'adhésion (FCFA)
+
+                    <input type="number" [(ngModel)]="editForm.fraisAdhesion" name="detailEditFrais" />
+
+                  </label>
+
+                </section>
+
+              </div>
+
+            </div>
+
+            <footer class="client-form-footer">
 
               <button type="button" class="btn btn-secondary" (click)="showEdit=false">Annuler</button>
 
-              <button class="btn btn-primary" type="submit">Enregistrer</button>
+              <button class="btn btn-primary" type="submit"><i class="pi pi-check"></i> Enregistrer</button>
 
-            </div>
+            </footer>
 
           </form>
 
@@ -335,6 +447,38 @@ import { DatePipe } from '@angular/common';
             <button type="button" class="btn btn-secondary" (click)="showDesactiver=false">Annuler</button>
 
             <button type="button" class="btn btn-primary" (click)="desactiver()">Désactiver</button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    }
+
+
+
+    @if (showReactiver) {
+
+      <div class="modal-backdrop" (click)="showReactiver=false">
+
+        <div class="modal" (click)="$event.stopPropagation()">
+
+          <h3>Réactiver ce client ?</h3>
+
+          <p class="hint">Le client pourra à nouveau recevoir des collectes.</p>
+
+          <label>Motif (optionnel)
+
+            <input [(ngModel)]="reactiverMotif" name="detailReactiverMotif" />
+
+          </label>
+
+          <div class="modal-actions">
+
+            <button type="button" class="btn btn-secondary" (click)="showReactiver=false">Annuler</button>
+
+            <button type="button" class="btn btn-primary" (click)="reactiver()">Réactiver</button>
 
           </div>
 
@@ -404,6 +548,81 @@ import { DatePipe } from '@angular/common';
 
     .header-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
+    .field-label { display: block; font-size: 0.86rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem; }
+
+    .client-form-backdrop { z-index: 50; }
+
+    .client-form-modal {
+      width: min(920px, calc(100vw - 2rem));
+      max-height: min(90vh, 820px);
+      display: flex; flex-direction: column;
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 20px;
+      box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 20px 50px -12px rgba(15, 23, 42, 0.22);
+      overflow: hidden;
+    }
+
+    .client-form-header {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+      padding: 1.15rem 1.5rem; background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
+      border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+
+    .client-form-header__title { display: flex; gap: 0.85rem; align-items: flex-start; min-width: 0; }
+
+    .client-form-header__title h3 { margin: 0 0 0.2rem; font-size: 1.15rem; color: #0f172a; }
+
+    .client-form-header__title p { margin: 0; font-size: 0.82rem; color: #64748b; }
+
+    .client-form-header__icon {
+      width: 44px; height: 44px; border-radius: 12px; background: #dbeafe; color: #1d4ed8;
+      display: grid; place-items: center; font-size: 1.1rem; flex-shrink: 0;
+    }
+
+    .btn-close {
+      width: 36px; height: 36px; border: 1px solid #e2e8f0; border-radius: 10px;
+      background: #fff; color: #64748b; cursor: pointer; display: grid; place-items: center;
+    }
+
+    .client-form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+    .client-form-scroll { flex: 1; overflow-y: auto; padding: 1.15rem 1.5rem; }
+
+    .client-form-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+
+    .client-form-section {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;
+      padding: 1rem 1.1rem; border: 1px solid #e2e8f0; border-radius: 14px; background: #fafbfc;
+    }
+
+    .client-form-section--stack { grid-template-columns: 1fr; }
+
+    .client-form-section h4 {
+      grid-column: 1 / -1; margin: 0 0 0.15rem; font-size: 0.88rem; font-weight: 700;
+      color: #1a5632; display: flex; align-items: center; gap: 0.45rem;
+    }
+
+    .client-form-section .section-sub { margin-top: 0.35rem; padding-top: 0.75rem; border-top: 1px dashed #e2e8f0; }
+
+    .client-form-section label { display: grid; gap: 0.35rem; font-size: 0.86rem; font-weight: 600; color: #334155; }
+
+    .client-form-section .span-2 { grid-column: 1 / -1; }
+
+    .client-form-section--stack .span-2 { grid-column: 1; }
+
+    .photo-section { grid-column: 1 / -1; padding-top: 0.25rem; }
+
+    .client-form-footer {
+      display: flex; justify-content: flex-end; gap: 0.65rem;
+      padding: 1rem 1.5rem; border-top: 1px solid #e2e8f0; background: #f8fafc; flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .client-form-columns, .client-form-section { grid-template-columns: 1fr; }
+      .client-form-section .span-2 { grid-column: 1; }
+      .client-form-footer { flex-direction: column-reverse; }
+      .client-form-footer .btn { width: 100%; justify-content: center; }
+    }
+
   `]
 
 })
@@ -416,17 +635,25 @@ export class ClientDetailComponent implements OnInit {
 
   historique = signal<ClientHistorique[]>([]);
 
+  agents = signal<Agent[]>([]);
+
+  marches = signal<Marche[]>([]);
+
   message = signal('');
 
   showEdit = false;
 
   showDesactiver = false;
 
+  showReactiver = false;
+
   showDelete = false;
 
   editForm: Client | null = null;
 
   desactiverMotif = '';
+
+  reactiverMotif = '';
 
   private clientId = 0;
 
@@ -454,6 +681,14 @@ export class ClientDetailComponent implements OnInit {
 
 
 
+  get canToggleStatut(): boolean {
+
+    return this.auth.hasRole('SUPER_ADMIN', 'ADMIN_AGENCE');
+
+  }
+
+
+
   ngOnInit(): void {
 
     this.clientId = Number(this.route.snapshot.paramMap.get('id'));
@@ -466,7 +701,17 @@ export class ClientDetailComponent implements OnInit {
 
   reload(): void {
 
-    this.api.getClient(this.clientId).subscribe(c => this.client.set(c));
+    this.api.getClient(this.clientId).subscribe(c => {
+
+      this.client.set(c);
+
+      const agenceId = c.agenceId ?? this.auth.agenceId();
+
+      this.api.getAgents(agenceId).subscribe(a => this.agents.set(a));
+
+      this.api.getMarches(agenceId).subscribe(m => this.marches.set(m));
+
+    });
 
     this.api.getCollectes({ clientId: this.clientId }).subscribe(c => this.collectes.set(c));
 
@@ -493,6 +738,14 @@ export class ClientDetailComponent implements OnInit {
     this.editForm = { ...c };
 
     this.showEdit = true;
+
+  }
+
+
+
+  onEditPhotoChange(url: string): void {
+
+    if (this.editForm) this.editForm.photoUrl = url;
 
   }
 
@@ -544,6 +797,28 @@ export class ClientDetailComponent implements OnInit {
 
 
 
+  reactiver(): void {
+
+    this.api.reactiverClient(this.clientId, this.reactiverMotif || undefined).subscribe({
+
+      next: () => {
+
+        this.showReactiver = false;
+
+        this.message.set('Client réactivé');
+
+        this.reload();
+
+      },
+
+      error: err => this.message.set(err?.error?.message || 'Erreur')
+
+    });
+
+  }
+
+
+
   supprimer(): void {
 
     this.api.deleteClient(this.clientId).subscribe({
@@ -575,6 +850,8 @@ export class ClientDetailComponent implements OnInit {
       MODIFICATION: 'Modification',
 
       DESACTIVATION: 'Désactivation',
+
+      REACTIVATION: 'Réactivation',
 
       SUPPRESSION: 'Suppression',
 

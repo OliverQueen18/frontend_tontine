@@ -12,9 +12,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     || req.url.includes('/auth/forgot-password')
     || req.url.includes('/auth/verify-otp')
     || req.url.includes('/auth/reset-password');
+  const isPublicRoute = req.url.includes('/public/');
 
   const token = auth.getAccessToken();
-  const authedReq = token && !isAuthRoute
+  const authedReq = token && !isAuthRoute && !isPublicRoute
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
 

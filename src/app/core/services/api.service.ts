@@ -266,6 +266,10 @@ export class ApiService {
     return this.http.patch<Client>(`${this.base}/clients/${id}/desactiver`, { motif });
   }
 
+  reactiverClient(id: number, motif?: string): Observable<Client> {
+    return this.http.patch<Client>(`${this.base}/clients/${id}/reactiver`, { motif });
+  }
+
   deleteClient(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.base}/clients/${id}`);
   }

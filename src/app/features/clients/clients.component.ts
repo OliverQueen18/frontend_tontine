@@ -30,6 +30,7 @@ export class ClientsComponent implements OnInit {
   showEdit = false;
   showHistorique = false;
   showDesactiver = false;
+  showReactiver = false;
   showDelete = false;
   showTransfer = false;
   showCreated = false;
@@ -45,6 +46,7 @@ export class ClientsComponent implements OnInit {
   form: Client = this.empty();
   editForm: Client = this.empty();
   desactiverMotif = '';
+  reactiverMotif = '';
   transferAgentId: number | null = null;
   transferMotif = '';
 
@@ -176,6 +178,10 @@ export class ClientsComponent implements OnInit {
     return this.auth.hasRole('SUPER_ADMIN') || this.auth.isCollecteur();
   }
 
+  get canToggleStatut(): boolean {
+    return this.auth.hasRole('SUPER_ADMIN', 'ADMIN_AGENCE');
+  }
+
   canDelete(c: Client): boolean {
     return !c.soldeEpargne || c.soldeEpargne <= 0;
   }
@@ -199,6 +205,10 @@ export class ClientsComponent implements OnInit {
 
   onPhotoChange(url: string): void {
     this.form.photoUrl = url;
+  }
+
+  onEditPhotoChange(url: string): void {
+    this.editForm.photoUrl = url;
   }
 
   previewPhoto(url?: string): string {
@@ -350,6 +360,10 @@ export class ClientsComponent implements OnInit {
     this.editForm = { ...c };
     this.phoneValid = !!c.telephone && c.telephone.length === 8;
     this.phoneSecondaireValid = !c.telephoneSecondaire || c.telephoneSecondaire.length === 8;
+    if (c.agenceId && this.auth.hasRole('SUPER_ADMIN')) {
+      this.api.getAgents(c.agenceId).subscribe(a => this.agents.set(a));
+      this.api.getMarches(c.agenceId).subscribe(m => this.marches.set(m));
+    }
     this.showEdit = true;
   }
 
@@ -361,6 +375,14 @@ export class ClientsComponent implements OnInit {
     }
     if (this.editForm.telephoneSecondaire && this.editForm.telephoneSecondaire.length !== 8) {
       this.message.set('Le téléphone secondaire doit contenir 8 chiffres');
+      return;
+    }
+    if (!this.editForm.marcheId) {
+      this.message.set('Le marché est obligatoire');
+      return;
+    }
+    if (!this.editForm.agentId) {
+      this.message.set('L\'agent collecteur est obligatoire');
       return;
     }
     this.api.updateClient(this.selected.id, this.editForm).subscribe({
@@ -400,6 +422,24 @@ export class ClientsComponent implements OnInit {
     });
   }
 
+  openReactiver(c: Client): void {
+    this.selected = c;
+    this.reactiverMotif = '';
+    this.showReactiver = true;
+  }
+
+  reactiver(): void {
+    if (!this.selected?.id) return;
+    this.api.reactiverClient(this.selected.id, this.reactiverMotif || undefined).subscribe({
+      next: () => {
+        this.showReactiver = false;
+        this.message.set('Client réactivé');
+        this.load();
+      },
+      error: err => this.message.set(err?.error?.message || 'Erreur')
+    });
+  }
+
   openDelete(c: Client): void {
     this.selected = c;
     this.showDelete = true;
@@ -422,6 +462,7 @@ export class ClientsComponent implements OnInit {
       CREATION: 'Création',
       MODIFICATION: 'Modification',
       DESACTIVATION: 'Désactivation',
+      REACTIVATION: 'Réactivation',
       SUPPRESSION: 'Suppression',
       RESTITUTION: 'Restitution',
       RESTITUTION_COMMISSION: 'Commission restitution'

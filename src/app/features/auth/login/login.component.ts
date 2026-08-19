@@ -117,7 +117,7 @@ export class LoginComponent {
 
     this.error.set('');
 
-    this.auth.login(this.username, this.password, this.rememberMe).subscribe({
+        this.auth.login(this.username.trim(), this.password, this.rememberMe).subscribe({
 
       next: () => {
 

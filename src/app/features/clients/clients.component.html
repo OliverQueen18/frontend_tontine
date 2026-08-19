@@ -81,6 +81,9 @@
               @if (c.statut === 'ACTIF') {
                 <button class="btn btn-secondary btn-sm" (click)="openDesactiver(c)">Désactiver</button>
               }
+              @if (c.statut === 'INACTIF' && canToggleStatut) {
+                <button class="btn btn-secondary btn-sm" (click)="openReactiver(c)">Réactiver</button>
+              }
               <button
                 class="btn btn-secondary btn-sm"
                 (click)="openDelete(c)"
@@ -356,55 +359,117 @@
 }
 
 @if (showEdit && selected) {
-  <div class="modal-backdrop" (click)="showEdit=false">
-    <div class="modal modal-lg" (click)="$event.stopPropagation()">
-      <h3>Modifier {{ selected.nomComplet }}</h3>
-      <form (ngSubmit)="saveEdit()" class="form-grid">
-        <label class="full-width">Nom complet *
-          <input [(ngModel)]="editForm.nomComplet" name="editNom" required />
-        </label>
-        <label>Téléphone * (8 chiffres)
-          <app-phone-digits [(ngModel)]="editForm.telephone" name="editTel" [required]="true" />
-        </label>
-        <label>E-mail
-          <input type="email" [(ngModel)]="editForm.email" name="editEmail" />
-        </label>
-        <label>Profession
-          <input [(ngModel)]="editForm.profession" name="editProfession" />
-        </label>
-        <label class="full-width">Adresse
-          <input [(ngModel)]="editForm.adresse" name="editAdresse" />
-        </label>
-        <label>Personne à contacter
-          <input [(ngModel)]="editForm.personneAContacter" name="editContact" />
-        </label>
-        <label>Tél. secondaire
-          <app-phone-digits [(ngModel)]="editForm.telephoneSecondaire" name="editTel2" [required]="false" />
-        </label>
-        <label>Montant journalier
-          <app-fcfa-amount-input [(ngModel)]="editForm.montantJournalier" name="editMontant" ariaLabel="Montant journalier" />
-        </label>
-        <label>Frais d'adhésion
-          <input type="number" [(ngModel)]="editForm.fraisAdhesion" name="editFrais" />
-        </label>
-        @if (smsDisponible) {
-          <label class="full-width checkbox-inline">
-            <input
-              type="checkbox"
-              [(ngModel)]="editForm.smsNotificationsEnabled"
-              name="editSms"
-              [disabled]="smsAgenceTous"
-            />
-            Notifications SMS
-            @if (smsAgenceTous) {
-              <small class="hint"> (déjà activé pour toute l'agence)</small>
-            }
-          </label>
-        }
-        <div class="modal-actions full-width">
-          <button type="button" class="btn btn-secondary" (click)="showEdit=false">Annuler</button>
-          <button class="btn btn-primary" type="submit">Enregistrer</button>
+  <div class="modal-backdrop client-form-backdrop" (click)="showEdit=false">
+    <div class="client-form-modal" role="dialog" aria-modal="true" aria-labelledby="client-edit-title" (click)="$event.stopPropagation()">
+      <header class="client-form-header">
+        <div class="client-form-header__title">
+          <span class="client-form-header__icon client-form-header__icon--edit"><i class="pi pi-user-edit"></i></span>
+          <div>
+            <h3 id="client-edit-title">Modifier {{ selected.nomComplet }}</h3>
+            <p>{{ selected.code }} · affectation, identité et adhésion</p>
+          </div>
         </div>
+        <button type="button" class="btn-close" (click)="showEdit=false" aria-label="Fermer">
+          <i class="pi pi-times"></i>
+        </button>
+      </header>
+
+      <form (ngSubmit)="saveEdit()" class="client-form">
+        <div class="client-form-scroll">
+          <div class="client-form-columns">
+            <section class="client-form-section client-form-section--stack">
+              <h4><i class="pi pi-map-marker"></i> Affectation</h4>
+              <label class="span-2 marche-field">Marché *
+                <select [(ngModel)]="editForm.marcheId" name="editMarcheId" required>
+                  <option [ngValue]="undefined" disabled>Choisir un marché</option>
+                  @for (m of marches(); track m.id) {
+                    <option [ngValue]="m.id">{{ m.nom }}@if (m.code) { ({{ m.code }})}</option>
+                  }
+                </select>
+              </label>
+              <label class="span-2">Agent collecteur *
+                <select [(ngModel)]="editForm.agentId" name="editAgentId" required [disabled]="isAgent">
+                  <option [ngValue]="undefined" disabled>Choisir un agent</option>
+                  @for (a of agents(); track a.id) {
+                    <option [ngValue]="a.id">{{ a.nomComplet }}</option>
+                  }
+                </select>
+              </label>
+
+              <h4 class="section-sub"><i class="pi pi-id-card"></i> Identité</h4>
+              <label class="span-2">Prénom et Nom complet *
+                <input [(ngModel)]="editForm.nomComplet" name="editNom" required />
+              </label>
+              <label class="span-2">Téléphone * (8 chiffres)
+                <app-phone-digits
+                  [(ngModel)]="editForm.telephone"
+                  name="editTel"
+                  [required]="true"
+                  (validChange)="phoneValid = $event"
+                />
+              </label>
+              <label>E-mail
+                <input type="email" [(ngModel)]="editForm.email" name="editEmail" placeholder="client@exemple.com" />
+              </label>
+              <label>Profession
+                <input [(ngModel)]="editForm.profession" name="editProfession" />
+              </label>
+              @if (smsDisponible) {
+                <label class="span-2 checkbox-inline">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="editForm.smsNotificationsEnabled"
+                    name="editSms"
+                    [disabled]="smsAgenceTous"
+                  />
+                  Notifications SMS
+                  @if (smsAgenceTous) {
+                    <small class="hint"> (déjà activé pour toute l'agence)</small>
+                  }
+                </label>
+              }
+            </section>
+
+            <section class="client-form-section">
+              <h4><i class="pi pi-address-book"></i> Compléments</h4>
+              <div class="photo-section span-2">
+                <span class="field-label">Photo du client</span>
+                <app-photo-capture [photoUrl]="editForm.photoUrl" (photoUrlChange)="onEditPhotoChange($event)" />
+              </div>
+              <label class="span-2">Adresse du client
+                <input [(ngModel)]="editForm.adresse" name="editAdresse" />
+              </label>
+              <label>Personne à contacter
+                <input [(ngModel)]="editForm.personneAContacter" name="editContact" />
+              </label>
+              <label>N° tel. secondaire (8 chiffres)
+                <app-phone-digits
+                  [(ngModel)]="editForm.telephoneSecondaire"
+                  name="editTel2"
+                  [required]="false"
+                  (validChange)="phoneSecondaireValid = $event"
+                />
+              </label>
+              <h4 class="section-sub"><i class="pi pi-wallet"></i> Adhésion</h4>
+              <label>Montant journalier
+                <app-fcfa-amount-input
+                  [(ngModel)]="editForm.montantJournalier"
+                  name="editMontant"
+                  ariaLabel="Montant journalier en FCFA"
+                />
+              </label>
+              <label>Frais d'adhésion (FCFA)
+                <input type="number" [(ngModel)]="editForm.fraisAdhesion" name="editFrais" />
+              </label>
+            </section>
+          </div>
+        </div>
+        <footer class="client-form-footer">
+          <button type="button" class="btn btn-secondary" (click)="showEdit=false">Annuler</button>
+          <button class="btn btn-primary" type="submit">
+            <i class="pi pi-check"></i> Enregistrer
+          </button>
+        </footer>
       </form>
     </div>
   </div>
@@ -421,6 +486,22 @@
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" (click)="showDesactiver=false">Annuler</button>
         <button type="button" class="btn btn-primary" (click)="desactiver()">Désactiver</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showReactiver && selected) {
+  <div class="modal-backdrop" (click)="showReactiver=false">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Réactiver {{ selected.nomComplet }}</h3>
+      <p class="hint">Le client pourra à nouveau recevoir des collectes.</p>
+      <label>Motif (optionnel)
+        <input [(ngModel)]="reactiverMotif" name="reactiverMotif" />
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="showReactiver=false">Annuler</button>
+        <button type="button" class="btn btn-primary" (click)="reactiver()">Réactiver</button>
       </div>
     </div>
   </div>
