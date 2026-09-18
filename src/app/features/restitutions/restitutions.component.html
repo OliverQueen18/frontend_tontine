@@ -167,7 +167,7 @@
 
       <div class="kpi-grid" style="margin-top:1rem">
 
-        <div class="kpi"><span>Total collecté</span><strong>{{ asNumber(calc['totalCollecte']) | fcfa }}</strong></div>
+        <div class="kpi"><span>Épargne du cycle</span><strong>{{ asNumber(calc['totalCollecte']) | fcfa }}</strong></div>
 
         <div class="kpi warn"><span>Commission estimée</span><strong>{{ asNumber(calc['commission']) | fcfa }}</strong></div>
 
@@ -187,7 +187,7 @@
 
       }
 
-      <p class="hint" style="margin-top:0.5rem">La commission grille dépend de la mise journalière, pas du total collecté. L'agent peut l'ajuster avant signature.</p>
+      <p class="hint" style="margin-top:0.5rem">Seules les collectes depuis la dernière restitution validée sont prises en compte. L'agent peut ajuster la commission avant signature.</p>
 
       <div style="margin-top:1rem">
 
@@ -248,7 +248,7 @@
         Restitution {{ r.numeroRecu }} — {{ r.clientNom }}
       </p>
       <div class="kpi-grid" style="margin-bottom:1rem">
-        <div class="kpi"><span>Total collecté</span><strong>{{ r.totalCollecte | fcfa }}</strong></div>
+        <div class="kpi"><span>Épargne du cycle</span><strong>{{ r.totalCollecte | fcfa }}</strong></div>
         <div class="kpi warn"><span>Commission auto</span><strong>{{ r.commissionCalculee | fcfa }}</strong></div>
         <div class="kpi success"><span>Net client</span><strong>{{ (r.totalCollecte ?? 0) - commissionDraft | fcfa }}</strong></div>
       </div>

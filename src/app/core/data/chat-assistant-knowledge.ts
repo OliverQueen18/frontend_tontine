@@ -120,7 +120,7 @@ export const CHAT_KNOWLEDGE: ChatKnowledgeEntry[] = [
   {
     scope: 'app',
     keywords: ['restitution', 'restituer', 'retrait', 'solde'],
-    answer: 'Le **caissier** initie la restitution (menu Restitutions). L\'**agent collecteur** valide la commission (modifiable, y compris 0), puis fait signer le client. Le solde passe à 0 et la caisse est débitée.',
+    answer: 'Le **caissier** initie la restitution (menu Restitutions). Seule l\'épargne collectée **depuis la dernière restitution** est rendue (le mois précédent n\'est pas recompté). L\'**agent collecteur** valide la commission (modifiable, y compris 0), puis fait signer le client. Le solde passe à 0 et la caisse est débitée.',
     roles: ['SUPER_ADMIN', 'ADMIN_AGENCE', 'CAISSIER', 'AGENT']
   },
   {
