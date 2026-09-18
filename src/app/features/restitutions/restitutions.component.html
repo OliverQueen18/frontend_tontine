@@ -109,10 +109,14 @@
 
             <td>
 
+              <button type="button" class="btn btn-secondary btn-sm" (click)="recalculer(r)">
+                Recalculer
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="annuler(r)">
+                Annuler
+              </button>
               <button type="button" class="btn btn-primary btn-sm" (click)="ouvrirSignature(r)">
-
                 Faire signer
-
               </button>
 
             </td>
@@ -229,6 +233,13 @@
             @if (r.validee) {
               <button type="button" class="btn btn-secondary btn-sm" (click)="ouvrirRecu(r)">
                 <i class="pi pi-print"></i> Reçu
+              </button>
+            } @else if (canCorriger) {
+              <button type="button" class="btn btn-secondary btn-sm" (click)="recalculer(r)">
+                Recalculer
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="annuler(r)">
+                Annuler
               </button>
             }
           </td>

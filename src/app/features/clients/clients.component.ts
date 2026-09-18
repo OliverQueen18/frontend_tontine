@@ -465,7 +465,9 @@ export class ClientsComponent implements OnInit {
       REACTIVATION: 'Réactivation',
       SUPPRESSION: 'Suppression',
       RESTITUTION: 'Restitution',
-      RESTITUTION_COMMISSION: 'Commission restitution'
+      RESTITUTION_COMMISSION: 'Commission restitution',
+      RESTITUTION_RECALCUL: 'Recalcul restitution',
+      RESTITUTION_ANNUL: 'Annulation restitution'
     };
     return labels[h.typeAction ?? ''] ?? h.typeAction ?? '—';
   }

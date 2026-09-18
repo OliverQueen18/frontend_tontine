@@ -857,7 +857,9 @@ export class ClientDetailComponent implements OnInit {
 
       RESTITUTION: 'Restitution',
 
-      RESTITUTION_COMMISSION: 'Commission restitution'
+      RESTITUTION_COMMISSION: 'Commission restitution',
+      RESTITUTION_RECALCUL: 'Recalcul restitution',
+      RESTITUTION_ANNUL: 'Annulation restitution'
 
     };
 

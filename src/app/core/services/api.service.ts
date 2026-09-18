@@ -350,6 +350,14 @@ export class ApiService {
     return this.http.patch<Restitution>(`${this.base}/restitutions/${id}/commission`, { commission });
   }
 
+  recalculerRestitution(id: number): Observable<Restitution> {
+    return this.http.post<Restitution>(`${this.base}/restitutions/${id}/recalculer`, {});
+  }
+
+  annulerRestitution(id: number): Observable<void> {
+    return this.http.post<void>(`${this.base}/restitutions/${id}/annuler`, {});
+  }
+
   // Caisse
   getCaisseJour(agenceId: number): Observable<Caisse | null> {
     return this.http.get<Caisse | null>(`${this.base}/caisse/jour`, {

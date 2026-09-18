@@ -138,6 +138,10 @@ export class RestitutionsComponent implements OnInit {
     if (r.id) this.commissionDrafts[r.id] = value;
   }
 
+  get canCorriger(): boolean {
+    return this.canEffectuer || this.isCollecteur;
+  }
+
   enregistrerCommission(r: Restitution): void {
     if (!r.id) return;
     const commission = this.getCommissionDraft(r);
@@ -148,6 +152,39 @@ export class RestitutionsComponent implements OnInit {
         if (r.id) this.commissionDrafts[r.id] = updated.commission ?? 0;
       },
       error: err => this.message.set(err?.error?.message || 'Erreur')
+    });
+  }
+
+  recalculer(r: Restitution): void {
+    if (!r.id) return;
+    this.api.recalculerRestitution(r.id).subscribe({
+      next: updated => {
+        this.message.set(
+          `Montant recalculé — épargne du cycle ${updated.totalCollecte} FCFA, net ${updated.montantNet} FCFA.`
+        );
+        if (updated.id) this.commissionDrafts[updated.id] = updated.commission ?? 0;
+        this.loadHistorique();
+        if (this.isCollecteur) this.loadEnAttente();
+      },
+      error: err => this.message.set(err?.error?.message || 'Impossible de recalculer')
+    });
+  }
+
+  async annuler(r: Restitution): Promise<void> {
+    if (!r.id) return;
+    const ok = window.confirm(
+      `Annuler la restitution ${r.numeroRecu} pour ${r.clientNom} ?\n`
+      + `Le montant ne sera pas versé. Vous pourrez ensuite relancer une restitution.`
+    );
+    if (!ok) return;
+    this.api.annulerRestitution(r.id).subscribe({
+      next: () => {
+        this.message.set(`Restitution ${r.numeroRecu} annulée. Vous pouvez en lancer une nouvelle.`);
+        if (r.id) delete this.commissionDrafts[r.id];
+        this.loadHistorique();
+        if (this.isCollecteur) this.loadEnAttente();
+      },
+      error: err => this.message.set(err?.error?.message || 'Impossible d\'annuler')
     });
   }
 
