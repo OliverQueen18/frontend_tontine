@@ -100,6 +100,26 @@
   overflow: hidden;
 }
 
+.delete-confirm-modal {
+  width: min(480px, calc(100vw - 2rem));
+}
+
+.delete-confirm-body {
+  gap: 0.75rem;
+
+  p { margin: 0; }
+
+  label {
+    font-size: 0.9rem;
+    color: #334155;
+  }
+}
+
+.delete-error {
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
 .detail-modal-header {
   display: flex;
   align-items: flex-start;

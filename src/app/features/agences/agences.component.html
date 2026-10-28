@@ -168,11 +168,11 @@
         <button type="button" class="btn btn-primary" (click)="openEdit(selected)">
           <i class="pi pi-pencil"></i> Modifier
         </button>
-        @if (selected.statut === 'ACTIF') {
+        @if (selected.statut?.toUpperCase() === 'ACTIF') {
           <button type="button" class="btn btn-danger" (click)="desactiver(selected)">
             <i class="pi pi-ban"></i> Désactiver
           </button>
-        } @else if (canDeleteAgence) {
+        } @else if (canActivateAgence) {
           <button type="button" class="btn btn-primary" (click)="activer(selected)">
             <i class="pi pi-check-circle"></i> Activer
           </button>
@@ -269,6 +269,46 @@
           [agenceNom]="grilleAgence!.nom"
           (saved)="message.set('Grille de commission enregistrée')" />
       </div>
+    </div>
+  </div>
+}
+
+@if (agenceToDelete) {
+  <div class="modal-backdrop detail-backdrop" (click)="cancelDelete()">
+    <div class="detail-modal delete-confirm-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header class="detail-modal-header">
+        <div class="detail-modal-title">
+          <span class="detail-modal-icon"><i class="pi pi-trash"></i></span>
+          <div>
+            <h3>Confirmer la suppression</h3>
+            <p class="detail-modal-meta">{{ agenceToDelete.nom }}</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" (click)="cancelDelete()" aria-label="Fermer" [disabled]="deletingAgence">
+          <i class="pi pi-times"></i>
+        </button>
+      </header>
+      <form class="detail-modal-body delete-confirm-body" (ngSubmit)="confirmDelete()">
+        <p>Cette action supprimera définitivement l'agence et toutes ses données liées. Elle est irréversible.</p>
+        <label for="deleteAgenceCode">Saisissez le code agence <strong>{{ agenceToDelete.code }}</strong> pour confirmer.</label>
+        <input
+          id="deleteAgenceCode"
+          [(ngModel)]="deleteCode"
+          name="deleteCode"
+          autocomplete="off"
+          required
+          [disabled]="deletingAgence"
+        />
+        @if (deleteError()) {
+          <p class="delete-error" role="alert">{{ deleteError() }}</p>
+        }
+        <footer class="detail-modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cancelDelete()" [disabled]="deletingAgence">Annuler</button>
+          <button type="submit" class="btn btn-danger" [disabled]="!deleteCode.trim() || deletingAgence">
+            {{ deletingAgence ? 'Suppression…' : 'Supprimer définitivement' }}
+          </button>
+        </footer>
+      </form>
     </div>
   </div>
 }

@@ -29,6 +29,10 @@ export class AgencesComponent implements OnInit {
   showGrille = false;
   editing: Agence | null = null;
   selected: Agence | null = null;
+  agenceToDelete: Agence | null = null;
+  deleteCode = '';
+  deleteError = signal('');
+  deletingAgence = false;
   grilleAgence: Agence | null = null;
   form: Agence = this.empty();
   logoPreview = '';
@@ -55,6 +59,11 @@ export class AgencesComponent implements OnInit {
 
   get canDeleteAgence(): boolean {
     return this.auth.hasRole('SUPER_ADMIN');
+  }
+
+  get canActivateAgence(): boolean {
+    return this.canDeleteAgence && !!this.selected
+      && this.selected.statut?.toUpperCase() !== 'ACTIF';
   }
 
   ngOnInit(): void {
@@ -193,18 +202,38 @@ export class AgencesComponent implements OnInit {
       `Cette action est irréversible.`
     );
     if (!ok) return;
-    const confirmCode = prompt(`Pour confirmer, saisissez le code agence : ${a.code}`);
-    if (confirmCode !== a.code) {
-      this.message.set('Suppression annulée : code incorrect');
+    this.agenceToDelete = a;
+    this.deleteCode = '';
+    this.deleteError.set('');
+  }
+
+  cancelDelete(): void {
+    if (this.deletingAgence) return;
+    this.agenceToDelete = null;
+    this.deleteCode = '';
+    this.deleteError.set('');
+  }
+
+  confirmDelete(): void {
+    const agence = this.agenceToDelete;
+    if (!agence?.id || !this.canDeleteAgence || this.deletingAgence) return;
+    if (this.deleteCode.trim() !== agence.code?.trim()) {
+      this.deleteError.set('Le code agence saisi est incorrect');
       return;
     }
-    this.api.supprimerAgence(a.id).subscribe({
+    this.deletingAgence = true;
+    this.api.supprimerAgence(agence.id).subscribe({
       next: () => {
+        this.deletingAgence = false;
+        this.cancelDelete();
         this.closeDetail();
-        this.message.set(`Agence « ${a.nom} » et toutes ses données ont été supprimées`);
+        this.message.set(`Agence « ${agence.nom} » et toutes ses données ont été supprimées`);
         this.load();
       },
-      error: err => this.message.set(err?.error?.message || 'Erreur lors de la suppression cascade')
+      error: err => {
+        this.deletingAgence = false;
+        this.deleteError.set(err?.error?.message || 'Erreur lors de la suppression cascade');
+      }
     });
   }
 
