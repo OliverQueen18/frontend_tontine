@@ -172,6 +172,10 @@
           <button type="button" class="btn btn-danger" (click)="desactiver(selected)">
             <i class="pi pi-ban"></i> Désactiver
           </button>
+        } @else if (canDeleteAgence) {
+          <button type="button" class="btn btn-primary" (click)="activer(selected)">
+            <i class="pi pi-check-circle"></i> Activer
+          </button>
         }
         @if (canDeleteAgence) {
           <button type="button" class="btn btn-danger" (click)="supprimer(selected)">

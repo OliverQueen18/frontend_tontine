@@ -158,9 +158,25 @@ export class AgencesComponent implements OnInit {
 
   desactiver(a: Agence): void {
     if (!a.id || !confirm('Désactiver cette agence ?')) return;
-    this.api.desactiverAgence(a.id).subscribe(() => {
-      this.closeDetail();
-      this.load();
+    this.api.desactiverAgence(a.id).subscribe({
+      next: () => {
+        this.closeDetail();
+        this.message.set(`Agence « ${a.nom} » désactivée`);
+        this.load();
+      },
+      error: err => this.message.set(err?.error?.message || 'Erreur lors de la désactivation')
+    });
+  }
+
+  activer(a: Agence): void {
+    if (!a.id || !this.canDeleteAgence || !confirm('Réactiver cette agence ?')) return;
+    this.api.activerAgence(a.id).subscribe({
+      next: () => {
+        this.closeDetail();
+        this.message.set(`Agence « ${a.nom} » réactivée`);
+        this.load();
+      },
+      error: err => this.message.set(err?.error?.message || 'Erreur lors de la réactivation')
     });
   }
 

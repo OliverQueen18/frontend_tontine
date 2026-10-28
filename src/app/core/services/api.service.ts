@@ -165,6 +165,10 @@ export class ApiService {
     return this.http.patch<Agence>(`${this.base}/agences/${id}/desactiver`, {});
   }
 
+  activerAgence(id: number): Observable<Agence> {
+    return this.http.patch<Agence>(`${this.base}/agences/${id}/activer`, {});
+  }
+
   setAgenceSmsTousClients(id: number, enabled: boolean): Observable<Agence> {
     return this.http.patch<Agence>(`${this.base}/agences/${id}/sms-tous-clients`, { enabled });
   }
